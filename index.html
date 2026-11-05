@@ -4,94 +4,183 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Gestão e Circulação de Acervo Escolar</title>
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <!-- SheetJS (XLSX Import/Export) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    @media print {
-      body * { visibility: hidden; }
-      #printableSheet, #printableSheet * { visibility: visible; }
-      #printableSheet { position: absolute; left: 0; top: 0; width: 100%; }
-      .no-print { display: none !important; }
-    }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
   </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
+<body>
 
-  <!-- TELA INICIAL: CONSULTA PÚBLICA (MULTIBUSCADOR) / LOGIN OPERADOR -->
-  <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 my-auto space-y-6">
-      <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-700 rounded-full mb-3">
-          <i class="ph-bold ph-books text-3xl"></i>
-        </div>
-        <h2 class="text-2xl font-bold text-slate-800">Biblioteca Escolar</h2>
-        <p class="text-slate-500 text-sm mt-1">Multibusca Global no Acervo e Circulação</p>
+  <!-- TELA INICIAL: CONSULTA PÚBLICA / LOGIN -->
+  <div id="loginOverlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: white; border-radius: 16px; padding: 32px; max-width: 600px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: bold; color: #1e293b; margin: 0;">Biblioteca Escolar</h2>
+        <p style="font-size: 14px; color: #64748b; margin-top: 4px;">Multibusca Global no Acervo e Circulação</p>
       </div>
 
-      <div id="loginAlert" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg text-center"></div>
+      <div id="loginAlert" style="display: none; padding: 12px; background: #fee2e2; border: 1px solid #f87171; color: #b91c1c; font-size: 13px; border-radius: 8px; text-align: center; margin-bottom: 16px;"></div>
 
-      <!-- ABAS DE NAVEGAÇÃO INICIAL -->
-      <div class="flex border-b text-sm font-semibold">
-        <button type="button" id="authTabPublic" onclick="switchAuthTab('public')" class="flex-1 py-2 text-blue-700 border-b-2 border-blue-700 text-center cursor-pointer font-bold">Consulta Pública (Multibusca)</button>
-        <button type="button" id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-slate-500 text-center cursor-pointer">Acesso Restrito Operador</button>
+      <!-- ABAS -->
+      <div style="display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; font-weight: 600; font-size: 14px; cursor: pointer;">
+        <div id="tabPublic" style="flex: 1; text-align: center; padding: 10px; color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px;">Consulta Pública</div>
+        <div id="tabLogin" style="flex: 1; text-align: center; padding: 10px; color: #64748b;">Acesso Operador</div>
       </div>
 
-      <!-- PAINEL MULTIBUSCA PÚBLICA -->
-      <div id="authPanelPublic" class="space-y-4">
-        <p class="text-xs text-slate-600 font-medium">Multibuscador Global — Pesquise por qualquer termo ou campo (parcial ou completo):</p>
+      <!-- PAINEL PÚBLICO -->
+      <div id="panelPublic" style="display: block;">
+        <p style="font-size: 12px; color: #475569; margin-bottom: 12px;">Pesquise por qualquer termo ou campo (parcial ou completo):</p>
         
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Título</label>
-            <input type="text" id="pubTitle" placeholder="Termo no título..." class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
+            <label style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Título</label>
+            <input type="text" id="pubTitle" placeholder="Termo no título..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;">
           </div>
           <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Autor</label>
-            <input type="text" id="pubAuthor" placeholder="Termo no autor..." class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Assunto / Qualquer Campo</label>
-            <input type="text" id="pubSubject" placeholder="Termo livre..." class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
+            <label style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Autor</label>
+            <input type="text" id="pubAuthor" placeholder="Termo no autor..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;">
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center pt-1">
-          <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Regra de Combinação</label>
-            <select id="pubBoolOp" class="w-full px-3 py-2 border rounded-lg text-xs bg-slate-50 font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500">
-              <option value="AND">E (Todos os critérios juntos)</option>
-              <option value="OR">OU (Qualquer um dos critérios)</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Exclusão (NÃO conter termo)</label>
-            <input type="text" id="pubNotSubject" placeholder="Termo a ignorar..." class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500">
-          </div>
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px;">Assunto / Termo Livre</label>
+          <input type="text" id="pubSubject" placeholder="Digite qualquer palavra..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;">
         </div>
 
-        <button type="button" id="btnSearch" onclick="performAdvancedSearch()" class="w-full bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow transition cursor-pointer flex items-center justify-center gap-2">
-          <i class="ph-bold ph-magnifying-glass text-base"></i> Pesquisar Acervo
+        <button type="button" id="btnSearch" style="width: 100%; background: #1d4ed8; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 16px;">
+          Pesquisar Acervo
         </button>
 
-        <div id="publicSearchResults" class="max-h-60 overflow-y-auto space-y-2 text-xs divide-y border rounded-lg p-3 bg-slate-50">
-          <p class="text-slate-400 text-center py-4">Utilize os filtros acima para pesquisar obras no catálogo.</p>
+        <div id="publicSearchResults" style="max-height: 180px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; font-size: 12px;">
+          <p style="color: #94a3b8; text-align: center; margin: 20px 0;">Utilize os filtros acima para pesquisar obras no catálogo.</p>
         </div>
 
-        <div class="text-center pt-2 border-t text-[11px] text-slate-500">
-          Bibliotecário: <span class="font-bold text-slate-700">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+        <div style="text-align: center; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #64748b;">
+          Bibliotecário: <strong style="color: #334155;">Igor Filipe Leal Negreiros (CRB 3/1779)</strong>
         </div>
       </div>
 
-      <!-- PAINEL LOGIN OPERADOR -->
-      <div id="authPanelLogin" class="hidden space-y-4">
-        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Utilizador / Operador</label>
-            <div class="relative">
-              <i class="ph-bold ph-user absolute left-3 top-3 text-slate-400 text-lg"></i>
-              <input type="text" id="loginUser" required autocomplete="off" class="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
-            </div>
+      <!-- PAINEL LOGIN -->
+      <div id="panelLogin" style="display: none;">
+        <form id="formLogin">
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Utilizador</label>
+            <input type="text" id="loginUser" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Senha</label>
+            <input type="password" id="loginPass" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+          </div>
+          <button type="submit" style="width: 100%; background: #1d4ed8; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;">
+            Entrar no Sistema
+          </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #64748b;">
+          Bibliotecário: <strong style="color: #334155;">Igor Filipe Leal Negreiros (CRB 3/1779)</strong>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SISTEMA INTERNO (APÓS LOGIN) -->
+  <div id="appContainer" style="display: none; flex-direction: column; min-height: 100vh;">
+    <header style="background: #1e3a8a; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+      <h1 style="margin: 0; font-size: 18px; font-weight: bold;">Biblioteca Escolar - Painel Interno</h1>
+      <button type="button" id="btnLogout" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Sair</button>
+    </header>
+    <main style="padding: 24px; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box;">
+      <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <h3 style="margin-top: 0; font-size: 16px; font-weight: bold;">Sessão Autenticada com Sucesso</h3>
+        <p style="font-size: 14px; color: #475569;">O operador realizou login com êxito.</p>
+      </div>
+    </main>
+    <footer style="background: #1e293b; color: #94a3b8; padding: 12px; text-align: center; font-size: 12px; margin-top: auto;">
+      Bibliotecário: <strong>Igor Filipe Leal Negreiros (CRB 3/1779)</strong>
+    </footer>
+  </div>
+
+  <!-- SCRIPT ROBUSTO E SEGURO -->
+  <script>
+    const sampleBooks = [
+      { id: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos', 'Infantil'] },
+      { id: '000002', school: 'Escola Municipal B', title: 'A Geografia e o Espaço', author: 'Milton Santos', cdd: '910', cutter: 'S237g', tags: ['Geografia', 'Espaço'] }
+    ];
+
+    const sampleStaff = [
+      { user: 'admin', pass: 'admin123', name: 'Administrador Master' }
+    ];
+
+    // Garantir dados iniciais
+    if (!localStorage.getItem('lib_books')) localStorage.setItem('lib_books', JSON.stringify(sampleBooks));
+    if (!localStorage.getItem('lib_staff')) localStorage.setItem('lib_staff', JSON.stringify(sampleStaff));
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabPublic = document.getElementById('tabPublic');
+      const tabLogin = document.getElementById('tabLogin');
+      const panelPublic = document.getElementById('panelPublic');
+      const panelLogin = document.getElementById('panelLogin');
+      const btnSearch = document.getElementById('btnSearch');
+      const formLogin = document.getElementById('formLogin');
+      const btnLogout = document.getElementById('btnLogout');
+      const loginOverlay = document.getElementById('loginOverlay');
+      const appContainer = document.getElementById('appContainer');
+      const loginAlert = document.getElementById('loginAlert');
+
+      // Alternar Abas na Tela Inicial
+      tabPublic.addEventListener('click', () => {
+        tabPublic.style.color = '#2563eb';
+        tabPublic.style.borderBottom = '2px solid #2563eb';
+        tabLogin.style.color = '#64748b';
+        tabLogin.style.borderBottom = 'none';
+        panelPublic.style.display = 'block';
+        panelLogin.style.display = 'none';
+      });
+
+      tabLogin.addEventListener('click', () => {
+        tabLogin.style.color = '#2563eb';
+        tabLogin.style.borderBottom = '2px solid #2563eb';
+        tabPublic.style.color = '#64748b';
+        tabPublic.style.borderBottom = 'none';
+        panelLogin.style.display = 'block';
+        panelPublic.style.display = 'none';
+      });
+
+      // Ação de Busca Global e Parcial
+      btnSearch.addEventListener('click', () => {
+        const t = (document.getElementById('pubTitle').value || '').toLowerCase().trim();
+        const a = (document.getElementById('pubAuthor').value || '').toLowerCase().trim();
+        const s = (document.getElementById('pubSubject').value || '').toLowerCase().trim();
+        const container = document.getElementById('publicSearchResults');
+
+        if (!t && !a && !s) {
+          container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Preencha pelo menos um campo para pesquisar.</p>';
+          return;
+        }
+
+        const books = JSON.parse(localStorage.getItem('lib_books') || '[]');
+        const results = books.filter(b => {
+          const title = (b.title || '').toLowerCase();
+          const author = (b.author || '').toLowerCase();
+          const school = (b.school || '').toLowerCase();
+          const tags = (b.tags || []).join(' ').toLowerCase();
+
+          const matchT = !t || title.includes(t);
+          const matchA = !a || author.includes(a);
+          const matchS = !s || title.includes(s) || author.includes(s) || school.includes(s) || tags.includes(s);
+
+          return matchT && matchA && matchS;
+        });
+
+        if (results.length === 0) {
+          container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Nenhum material encontrado.</p>';
+          return;
+        }
+
+        container.innerHTML = results.map(b => `
+          <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+            <strong>${b.title}</strong> <span style="color: #64748b;">(${b.author})</span><br>
+            <span style="color: #1e3

@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão de Biblioteca Escolar</title>
+    <title>BiblioEscola - Sistema de Gestão e Etiquetagem de Acervo</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Phosphor Icons for SVG UI icons -->
+    <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- SheetJS (XLSX Import/Export Library) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- JsBarcode (Barcode generation for labels) -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- html2pdf.js (PDF Label Generator) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -32,507 +38,760 @@
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Libre+Barcode+128&family=Roboto+Mono:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'Roboto Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print formatting for labels */
+        @media print {
+            body * { visibility: hidden; }
+            #label-print-area, #label-print-area * { visibility: visible; }
+            #label-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
         }
-        /* Custom scrollbar for table containers */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+
+        /* Biblivre / Leão Sampaio label style */
+        .bib-label-card {
+            width: 95mm;
+            height: 30mm;
+            border: 1px dashed #cbd5e1;
+            padding: 3mm;
+            box-sizing: border-box;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            page-break-inside: avoid;
         }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col antialiased">
 
-    <!-- Header Principal / Navbar -->
-    <header class="bg-navy-900 text-white shadow-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
-            <div class="flex items-center space-x-3">
-                <div class="bg-brand-blue p-2 rounded-lg text-white">
-                    <i class="ph ph-books text-2xl"></i>
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="fixed inset-0 z-50 bg-navy-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 border border-slate-200">
+            <div class="text-center mb-6">
+                <div class="inline-flex bg-brand-blue text-white p-3.5 rounded-2xl mb-3 shadow-lg">
+                    <i class="ph ph-books text-4xl"></i>
                 </div>
+                <h2 class="text-2xl font-bold text-slate-800">BiblioEscola</h2>
+                <p class="text-sm text-slate-500">Sistema de Gestão, Catalogação e Etiquetas</p>
+            </div>
+
+            <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">BiblioEscola</h1>
-                    <p class="text-xs text-slate-400">Circulação e Controle de Acervo</p>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Usuário do Operador</label>
+                    <div class="relative">
+                        <i class="ph ph-user absolute left-3 top-3 text-slate-400 text-lg"></i>
+                        <input type="text" id="login-user" required placeholder="Digite seu usuário individual..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                    </div>
                 </div>
-            </div>
 
-            <!-- Profile Info / Date -->
-            <div class="hidden md:flex items-center space-x-4 text-sm text-slate-300">
-                <span class="flex items-center gap-1 bg-navy-800 px-3 py-1.5 rounded-full border border-navy-700">
-                    <i class="ph ph-calendar text-brand-light"></i>
-                    <span id="current-date-display">--/--/----</span>
-                </span>
-            </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Senha</label>
+                    <div class="relative">
+                        <i class="ph ph-lock-key absolute left-3 top-3 text-slate-400 text-lg"></i>
+                        <input type="password" id="login-pass" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition-all text-sm flex items-center justify-center gap-2">
+                    <i class="ph ph-sign-in text-lg"></i>
+                    Acessar o Sistema
+                </button>
+            </form>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Container -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow py-6">
-
-        <!-- Navigation Tabs -->
-        <nav class="flex space-x-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto custom-scrollbar">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-navy-700 text-white shadow-sm">
-                <i class="ph ph-squares-four text-lg"></i>
-                Dashboard
-            </button>
-            <button onclick="switchTab('emprestimos')" id="tab-emprestimos" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
-                <i class="ph ph-arrows-left-right text-lg"></i>
-                Empréstimos
-            </button>
-            <button onclick="switchTab('acervo')" id="tab-acervo" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
-                <i class="ph ph-book-open text-lg"></i>
-                Acervo / Materiais
-            </button>
-            <button onclick="switchTab('alunos')" id="tab-alunos" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
-                <i class="ph ph-student text-lg"></i>
-                Alunos
-            </button>
-            <button onclick="switchTab('responsaveis')" id="tab-responsaveis" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
-                <i class="ph ph-user-gear text-lg"></i>
-                Atendentes / Liberação
-            </button>
-        </nav>
-
-        <!-- Dynamic Content Sections -->
+    <!-- PAINEL PRINCIPAL -->
+    <div id="main-app" class="hidden flex-col min-h-screen">
         
-        <!-- SECTION 1: DASHBOARD -->
-        <section id="sec-dashboard" class="tab-content space-y-6">
-            <!-- Summary Metrics Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <!-- Header Principal -->
+        <header class="bg-navy-900 text-white shadow-md sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-brand-blue p-2 rounded-lg text-white">
+                        <i class="ph ph-books text-2xl"></i>
+                    </div>
                     <div>
-                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Empréstimos Ativos</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-active-count">0</h3>
-                    </div>
-                    <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">
-                        <i class="ph ph-clock"></i>
+                        <h1 class="font-bold text-lg leading-tight">BiblioEscola</h1>
+                        <p class="text-xs text-slate-400">Autenticado & Auditado</p>
                     </div>
                 </div>
 
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Em Atraso</p>
-                        <h3 class="text-3xl font-bold text-red-600 mt-1" id="dash-overdue-count">0</h3>
-                    </div>
-                    <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl">
-                        <i class="ph ph-warning-circle"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Alunos Cadastrados</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-students-count">0</h3>
-                    </div>
-                    <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
-                        <i class="ph ph-users"></i>
-                    </div>
-                </div>
-
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Obras Cadastradas</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-books-count">0</h3>
-                    </div>
-                    <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
-                        <i class="ph ph-book-bookmark"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity & Urgent Returns -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Urgent Overdue Returns -->
-                <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-                            <i class="ph ph-bell-ringing text-red-500"></i>
-                            Devoluções Pendentes / Atrasadas
-                        </h3>
-                        <button onclick="switchTab('emprestimos')" class="text-xs text-brand-blue font-semibold hover:underline">Ver Todos</button>
-                    </div>
-                    <div class="overflow-x-auto custom-scrollbar">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Aluno</th>
-                                    <th class="p-3">Material</th>
-                                    <th class="p-3">Data Prevista</th>
-                                    <th class="p-3">Status</th>
-                                    <th class="p-3 text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dash-urgent-table" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Fast Info / Stats Panel -->
-                <div class="bg-navy-900 text-white rounded-xl shadow-sm p-5 flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-bold text-lg mb-2 flex items-center gap-2 text-brand-light">
-                            <i class="ph ph-info"></i> Regras da Biblioteca
-                        </h3>
-                        <ul class="text-xs text-slate-300 space-y-2.5 mt-4">
-                            <li class="flex items-start gap-2">
-                                <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
-                                <span><strong>Prazo Padrão:</strong> 7 dias corridos para devolução do material.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
-                                <span><strong>Rotatividade:</strong> Alunos com atraso ficam bloqueados para novos empréstimos.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
-                                <span><strong>Responsabilidade:</strong> Sempre registre a devolução para liberar a obra no acervo.</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="mt-6 pt-4 border-t border-navy-700 flex justify-between items-center text-xs text-slate-400">
-                        <span>Sistema Ativo</span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Online
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 2: EMPRÉSTIMOS -->
-        <section id="sec-emprestimos" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form: Novo Empréstimo -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-                        <i class="ph ph-plus-circle text-brand-blue"></i>
-                        Novo Empréstimo
-                    </h3>
-                    <form id="form-emprestimo" onsubmit="handleSaveEmprestimo(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Aluno (Tomador)</label>
-                            <select id="emp-aluno" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:bg-white outline-none">
-                                <option value="">Selecione o Aluno...</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Material / Livro</label>
-                            <select id="emp-livro" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:bg-white outline-none">
-                                <option value="">Selecione a obra no acervo...</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Atendente / Responsável</label>
-                            <select id="emp-responsavel" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue focus:bg-white outline-none">
-                                <option value="">Selecione quem está liberando...</option>
-                            </select>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data Retirada</label>
-                                <input type="date" id="emp-data-retirada" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none" onchange="autoCalculateDueDate()">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Devolução Prevista</label>
-                                <input type="date" id="emp-data-prevista" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observações (Opcional)</label>
-                            <textarea id="emp-obs" rows="2" placeholder="Estado de conservação, recomendações..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none resize-none"></textarea>
-                        </div>
-
-                        <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
-                            <i class="ph ph-check-bold"></i>
-                            Registrar Empréstimo
+                <!-- Painel de Usuário & Ações Rápidas -->
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:flex items-center space-x-2 border-r border-navy-700 pr-3 mr-1">
+                        <button onclick="exportToXLSX()" title="Exportar dados para Excel (.xlsx)" class="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
+                            <i class="ph ph-file-xls text-base"></i>
+                            Exportar XLSX
                         </button>
-                    </form>
-                </div>
-
-                <!-- Tabela de Registros -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                        <h3 class="font-bold text-slate-800 text-lg">Histórico de Empréstimos</h3>
-                        
-                        <!-- Search & Filter Controls -->
-                        <div class="flex items-center gap-2">
-                            <input type="text" id="search-emprestimos" oninput="renderEmprestimosTable()" placeholder="Buscar por Aluno ou Obra..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                            <select id="filter-status-emp" onchange="renderEmprestimosTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none">
-                                <option value="TODOS">Todos os Status</option>
-                                <option value="EMPRESTADO">Emprestados (Ativos)</option>
-                                <option value="ATRASADO">Em Atraso</option>
-                                <option value="DEVOLVIDO">Devolvidos</option>
-                            </select>
-                        </div>
+                        <label title="Importar dados de um arquivo Excel (.xlsx)" class="flex items-center gap-1.5 bg-navy-700 hover:bg-navy-600 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer border border-navy-600 transition-colors">
+                            <i class="ph ph-upload-simple text-base"></i>
+                            Importar XLSX
+                            <input type="file" id="input-import-xlsx" accept=".xlsx, .xls" onchange="importFromXLSX(event)" class="hidden">
+                        </label>
                     </div>
 
-                    <div class="overflow-x-auto custom-scrollbar flex-grow">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Aluno</th>
-                                    <th class="p-3">Material</th>
-                                    <th class="p-3">Retirada / Prevista</th>
-                                    <th class="p-3">Responsável</th>
-                                    <th class="p-3">Status</th>
-                                    <th class="p-3 text-center">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-emprestimos" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
+                    <!-- Perfil / Alterar Senha / Logout -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openChangePasswordModal()" class="text-xs bg-navy-800 hover:bg-navy-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-navy-700 flex items-center gap-1">
+                            <i class="ph ph-key text-sm"></i>
+                            <span id="logged-user-name">Operador</span>
+                        </button>
+                        <button onclick="handleLogout()" title="Sair do sistema" class="bg-red-600/80 hover:bg-red-600 text-white p-2 rounded-lg text-sm transition-colors">
+                            <i class="ph ph-sign-out text-lg"></i>
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </header>
 
-        <!-- SECTION 3: ACERVO / MATERIAIS -->
-        <section id="sec-acervo" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form: Novo Material -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-                        <i class="ph ph-plus-circle text-brand-blue"></i>
-                        Cadastrar Obra / Material
-                    </h3>
-                    <form id="form-acervo" onsubmit="handleSaveAcervo(event)" class="space-y-4">
+        <!-- Container de Conteúdo -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-grow py-6">
+
+            <!-- Mobile Excel Actions -->
+            <div class="md:hidden flex items-center justify-between gap-2 mb-4 bg-white p-3 rounded-xl border border-slate-200">
+                <span class="text-xs font-semibold text-slate-600">Planilhas XLSX:</span>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToXLSX()" class="flex items-center gap-1 bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium">
+                        <i class="ph ph-file-xls"></i> Exportar
+                    </button>
+                    <label class="flex items-center gap-1 bg-slate-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer">
+                        <i class="ph ph-upload-simple"></i> Importar
+                        <input type="file" accept=".xlsx, .xls" onchange="importFromXLSX(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Navegação por Abas -->
+            <nav class="flex space-x-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto custom-scrollbar">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-navy-700 text-white shadow-sm">
+                    <i class="ph ph-squares-four text-lg"></i>
+                    Dashboard
+                </button>
+                <button onclick="switchTab('emprestimos')" id="tab-emprestimos" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-arrows-left-right text-lg"></i>
+                    Empréstimos
+                </button>
+                <button onclick="switchTab('acervo')" id="tab-acervo" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-book-open text-lg"></i>
+                    Acervo / Catalogação
+                </button>
+                <button onclick="switchTab('etiquetas')" id="tab-etiquetas" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-barcode text-lg"></i>
+                    Gerador de Etiquetas
+                </button>
+                <button onclick="switchTab('alunos')" id="tab-alunos" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-student text-lg"></i>
+                    Alunos
+                </button>
+                <button onclick="switchTab('responsaveis')" id="tab-responsaveis" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-user-gear text-lg"></i>
+                    Operadores / Atendentes
+                </button>
+                <button onclick="switchTab('logs')" id="tab-logs" class="nav-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-list-checks text-lg"></i>
+                    Logs / Auditoria
+                </button>
+            </nav>
+
+            <!-- SEÇÃO 1: DASHBOARD -->
+            <section id="sec-dashboard" class="tab-content space-y-6">
+                <!-- Indicadores -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Código de Tombo / ID</label>
-                            <input type="text" id="livro-tombo" required placeholder="Ex: TMB-1092" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Empréstimos Ativos</p>
+                            <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-active-count">0</h3>
                         </div>
+                        <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">
+                            <i class="ph ph-clock"></i>
+                        </div>
+                    </div>
 
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Título do Livro/Material</label>
-                            <input type="text" id="livro-titulo" required placeholder="Ex: O Pequeno Príncipe" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Em Atraso</p>
+                            <h3 class="text-3xl font-bold text-red-600 mt-1" id="dash-overdue-count">0</h3>
                         </div>
+                        <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl">
+                            <i class="ph ph-warning-circle"></i>
+                        </div>
+                    </div>
 
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Autor / Editora</label>
-                            <input type="text" id="livro-autor" required placeholder="Ex: Antoine de Saint-Exupéry" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Alunos Cadastrados</p>
+                            <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-students-count">0</h3>
                         </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                            <i class="ph ph-users"></i>
+                        </div>
+                    </div>
 
-                        <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Obras Catalogadas</p>
+                            <h3 class="text-3xl font-bold text-slate-800 mt-1" id="dash-books-count">0</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
+                            <i class="ph ph-book-bookmark"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Devoluções Pendentes -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <i class="ph ph-bell-ringing text-red-500"></i>
+                                Pendências e Atrasos Urgentes
+                            </h3>
+                            <button onclick="switchTab('emprestimos')" class="text-xs text-brand-blue font-semibold hover:underline">Ver Todos</button>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">Aluno</th>
+                                        <th class="p-3">Material</th>
+                                        <th class="p-3">Data Prevista</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-urgent-table" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-navy-900 text-white rounded-xl shadow-sm p-5 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg mb-2 flex items-center gap-2 text-brand-light">
+                                <i class="ph ph-shield-check"></i> Rastreabilidade & Controle
+                            </h3>
+                            <ul class="text-xs text-slate-300 space-y-3 mt-4">
+                                <li class="flex items-start gap-2">
+                                    <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
+                                    <span><strong>Registro Individual:</strong> Toda alteração fica gravada com o nome do operador logado na aba <em>Logs / Auditoria</em>.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
+                                    <span><strong>Padrão Biblivre / Leão Sampaio:</strong> Etiquetas de lombada geradas automaticamente com CDD, Cutter e Barcode CODE128.</span>
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <i class="ph ph-check-circle text-emerald-400 text-base flex-shrink-0 mt-0.5"></i>
+                                    <span><strong>Recuperação de Informação:</strong> Até 3 tags/indexadores cadastrados por obra para rápida localização.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-navy-700 text-xs text-slate-400 flex justify-between items-center">
+                            <span>Sessão Ativa: <strong id="dash-operator-label" class="text-white">--</strong></span>
+                            <span id="dash-current-date" class="text-slate-300">--/--/----</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 2: EMPRÉSTIMOS -->
+            <section id="sec-emprestimos" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+                            <i class="ph ph-plus-circle text-brand-blue"></i>
+                            Novo Empréstimo
+                        </h3>
+                        <form id="form-emprestimo" onsubmit="handleSaveEmprestimo(event)" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Gênero / Categoria</label>
-                                <select id="livro-categoria" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                                    <option value="Literatura Infantil">Infantil</option>
-                                    <option value="Infantojuvenil">Infantojuvenil</option>
-                                    <option value="Didático">Didático</option>
-                                    <option value="Romance / Ficção">Romance / Ficção</option>
-                                    <option value="Quadrinhos / HQs">Quadrinhos / HQs</option>
-                                    <option value="Outros">Outros</option>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Aluno (Tomador)</label>
+                                <select id="emp-aluno" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                    <option value="">Selecione o Aluno...</option>
                                 </select>
                             </div>
+
                             <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Qtd Exemplares</label>
-                                <input type="number" min="1" value="1" id="livro-qtd" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Material / Livro</label>
+                                <select id="emp-livro" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                    <option value="">Selecione a obra...</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Atendente / Operador Responsável</label>
+                                <select id="emp-responsavel" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                    <option value="">Selecione o Atendente...</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data Retirada</label>
+                                    <input type="date" id="emp-data-retirada" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none" onchange="autoCalculateDueDate()">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Devolução Prevista</label>
+                                    <input type="date" id="emp-data-prevista" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observações (Opcional)</label>
+                                <textarea id="emp-obs" rows="2" placeholder="Estado de conservação, notas..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none resize-none"></textarea>
+                            </div>
+
+                            <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                                <i class="ph ph-check-bold"></i>
+                                Registrar Empréstimo
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <h3 class="font-bold text-slate-800 text-lg">Histórico de Empréstimos</h3>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="search-emprestimos" oninput="renderEmprestimosTable()" placeholder="Buscar Aluno ou Livro..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                <select id="filter-status-emp" onchange="renderEmprestimosTable()" class="bg-slate-50 border border-slate-300 rounded-lg px-2 py-1.5 text-sm outline-none">
+                                    <option value="TODOS">Todos os Status</option>
+                                    <option value="EMPRESTADO">Emprestados</option>
+                                    <option value="ATRASADO">Em Atraso</option>
+                                    <option value="DEVOLVIDO">Devolvidos</option>
+                                </select>
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
-                            <i class="ph ph-floppy-disk"></i>
-                            Salvar no Acervo
-                        </button>
-                    </form>
+                        <div class="overflow-x-auto custom-scrollbar flex-grow">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">Aluno</th>
+                                        <th class="p-3">Material</th>
+                                        <th class="p-3">Datas</th>
+                                        <th class="p-3">Responsável</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-emprestimos" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-                <!-- Tabela do Acervo -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <!-- SEÇÃO 3: ACERVO / CATALOGAÇÃO -->
+            <section id="sec-acervo" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Formulário de Catalogação Avançada -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+                            <i class="ph ph-plus-circle text-brand-blue"></i>
+                            Catalogar Nova Obra
+                        </h3>
+                        <form id="form-acervo" onsubmit="handleSaveAcervo(event)" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nº Tombo</label>
+                                    <input type="text" id="livro-tombo" required placeholder="Ex: 0000005949" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Reg. Patrimonial</label>
+                                    <input type="text" id="livro-patrimonio" required placeholder="LeaoSamp.2025.1465" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none font-mono">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Título da Obra</label>
+                                <input type="text" id="livro-titulo" required placeholder="Ex: Contos de Perrault" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Autor (Nome Completo)</label>
+                                <input type="text" id="livro-autor" required placeholder="Ex: Ruth Rocha" oninput="autoGenerateCutter()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <!-- Classificação Bibliográfica (CDD/CDDiju & Cutter) -->
+                            <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div>
+                                    <label class="block text-xs font-semibold text-navy-700 uppercase mb-1">CDD / CDDiju</label>
+                                    <input type="text" id="livro-cdd" required placeholder="Ex: 028.5112" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-mono focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-navy-700 uppercase mb-1">Cutter / Autor</label>
+                                    <input type="text" id="livro-cutter" required placeholder="Ex: R672c" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-mono focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Indexadores / Tags (Até 3) -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Indexadores / Assuntos (Até 3 Tags)</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="text" id="livro-tag1" placeholder="#Tag 1" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
+                                    <input type="text" id="livro-tag2" placeholder="#Tag 2" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
+                                    <input type="text" id="livro-tag3" placeholder="#Tag 3" class="bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoria</label>
+                                    <select id="livro-categoria" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-blue outline-none">
+                                        <option value="Literatura Infantil">Infantil</option>
+                                        <option value="Infantojuvenil">Infantojuvenil</option>
+                                        <option value="Didático">Didático</option>
+                                        <option value="Romance / Ficção">Ficção</option>
+                                        <option value="Quadrinhos / HQs">HQs</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nº Exemplar</label>
+                                    <input type="number" min="1" value="1" id="livro-exemplar" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Qtd Estoque</label>
+                                    <input type="number" min="1" value="1" id="livro-qtd" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                                <i class="ph ph-floppy-disk"></i>
+                                Salvar Catalogação
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Tabela de Catalogação do Acervo -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 text-lg">Catálogo Bibliográfico</h3>
+                            <input type="text" id="search-acervo" oninput="renderAcervoTable()" placeholder="Buscar título, tombo ou tag..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar flex-grow">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">Tombo / Reg.</th>
+                                        <th class="p-3">Título / Autor</th>
+                                        <th class="p-3">Localização (CDD + Cutter)</th>
+                                        <th class="p-3">Indexadores</th>
+                                        <th class="p-3 text-center">Qtd</th>
+                                        <th class="p-3 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-acervo" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 4: GERADOR DE ETIQUETAS (PADRÃO BIBLIVRE / LEÃO SAMPAIO) -->
+            <section id="sec-etiquetas" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <i class="ph ph-barcode text-brand-blue text-xl"></i>
+                                Gerador de Etiquetas de Lombada & Código de Barras
+                            </h3>
+                            <p class="text-xs text-slate-500">Modelo padrão EEFTI Dr. Leão Sampaio / Biblivre com código CODE128 e notação de localização.</p>
+                        </div>
+                        <div class="flex items-center gap-2 no-print">
+                            <button onclick="printLabels()" class="bg-navy-800 hover:bg-navy-900 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+                                <i class="ph ph-printer text-base"></i> Impressão Direta
+                            </button>
+                            <button onclick="downloadLabelsPDF()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+                                <i class="ph ph-file-pdf text-base"></i> Baixar PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Seleção de Obras para Etiquetagem -->
+                    <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Filtrar Obra para Impressão de Etiquetas:</label>
+                        <select id="select-label-book" onchange="generateLabelsPreview()" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            <option value="ALL">Gerar Etiquetas de TODO O ACERVO CATALOGADO</option>
+                        </select>
+                    </div>
+
+                    <!-- Área Visual de Prévia das Etiquetas -->
+                    <div class="bg-slate-200 p-6 rounded-xl overflow-x-auto custom-scrollbar flex justify-center">
+                        <div id="label-print-area" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- As etiquetas serão renderizadas aqui via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 5: ALUNOS -->
+            <section id="sec-alunos" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+                            <i class="ph ph-user-plus text-brand-blue"></i>
+                            Cadastrar Aluno
+                        </h3>
+                        <form id="form-aluno" onsubmit="handleSaveAluno(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Matrícula</label>
+                                <input type="text" id="aluno-matricula" required placeholder="Ex: 2026-001" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo</label>
+                                <input type="text" id="aluno-nome" required placeholder="Ex: Ana Clara Silva" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Série / Ano</label>
+                                    <input type="text" id="aluno-serie" required placeholder="Ex: 7º Ano" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Turma / Turno</label>
+                                    <input type="text" id="aluno-turma" required placeholder="Ex: Turma B - Manhã" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Responsável</label>
+                                <input type="text" id="aluno-resp-nome" placeholder="Nome do Pai/Mãe ou Tutor" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Contato do Responsável</label>
+                                <input type="tel" id="aluno-resp-fone" placeholder="(88) 99999-0000" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                                <i class="ph ph-floppy-disk"></i>
+                                Salvar Aluno
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 text-lg">Alunos Cadastrados</h3>
+                            <input type="text" id="search-alunos" oninput="renderAlunosTable()" placeholder="Buscar por nome ou turma..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                        </div>
+
+                        <div class="overflow-x-auto custom-scrollbar flex-grow">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">Matrícula</th>
+                                        <th class="p-3">Aluno</th>
+                                        <th class="p-3">Série/Turma</th>
+                                        <th class="p-3">Contato Responsável</th>
+                                        <th class="p-3 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-alunos" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 6: OPERADORES E ATENDENTES -->
+            <section id="sec-responsaveis" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+                            <i class="ph ph-user-gear text-brand-blue"></i>
+                            Novo Operador / Atendente
+                        </h3>
+                        <form id="form-responsavel" onsubmit="handleSaveResponsavel(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Operador</label>
+                                <input type="text" id="resp-nome" required placeholder="Ex: Igor Sampaio" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome de Usuário (Login)</label>
+                                <input type="text" id="resp-user" required placeholder="Ex: igor" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Senha Inicial</label>
+                                <input type="password" id="resp-pass" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cargo / Função</label>
+                                <input type="text" id="resp-cargo" required placeholder="Ex: Bibliotecário(a)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            </div>
+
+                            <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
+                                <i class="ph ph-floppy-disk"></i>
+                                Cadastrar Operador
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 text-lg mb-4">Equipe de Operadores do Sistema</h3>
+                        
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3">Nome</th>
+                                        <th class="p-3">Login</th>
+                                        <th class="p-3">Cargo</th>
+                                        <th class="p-3 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-responsaveis" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SEÇÃO 7: LOGS E AUDITORIA DE ATIVIDADES -->
+            <section id="sec-logs" class="tab-content hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-lg">Catálogo do Acervo</h3>
-                        <input type="text" id="search-acervo" oninput="renderAcervoTable()" placeholder="Buscar título ou tombo..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                    </div>
-
-                    <div class="overflow-x-auto custom-scrollbar flex-grow">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Tombo</th>
-                                    <th class="p-3">Título / Autor</th>
-                                    <th class="p-3">Categoria</th>
-                                    <th class="p-3 text-center">Total / Disp.</th>
-                                    <th class="p-3 text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-acervo" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 4: ALUNOS -->
-        <section id="sec-alunos" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form: Cadastrar Aluno -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-                        <i class="ph ph-user-plus text-brand-blue"></i>
-                        Cadastrar Aluno
-                    </h3>
-                    <form id="form-aluno" onsubmit="handleSaveAluno(event)" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Matrícula</label>
-                            <input type="text" id="aluno-matricula" required placeholder="Ex: 2026-001" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                                <i class="ph ph-list-checks text-brand-blue"></i>
+                                Histórico de Auditoria / Rastreabilidade
+                            </h3>
+                            <p class="text-xs text-slate-500">Registro cronológico detalhado das ações executadas por operador logado.</p>
                         </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo do Aluno</label>
-                            <input type="text" id="aluno-nome" required placeholder="Ex: Ana Clara Silva" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Série / Ano</label>
-                                <input type="text" id="aluno-serie" required placeholder="Ex: 7º Ano" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Turma / Shift</label>
-                                <input type="text" id="aluno-turma" required placeholder="Ex: Turma B" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Responsável</label>
-                            <input type="text" id="aluno-resp-nome" placeholder="Nome do Pai/Mãe ou Tutor" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telefone do Responsável</label>
-                            <input type="tel" id="aluno-resp-fone" placeholder="(88) 99999-0000" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                        </div>
-
-                        <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
-                            <i class="ph ph-floppy-disk"></i>
-                            Salvar Aluno
+                        <button onclick="clearAuditLogs()" class="text-xs text-red-600 hover:text-red-800 font-semibold border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+                            Limpar Histórico de Logs
                         </button>
-                    </form>
-                </div>
-
-                <!-- Tabela de Alunos -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-bold text-slate-800 text-lg">Alunos Cadastrados</h3>
-                        <input type="text" id="search-alunos" oninput="renderAlunosTable()" placeholder="Buscar por nome ou turma..." class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
                     </div>
 
-                    <div class="overflow-x-auto custom-scrollbar flex-grow">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
-                                <tr>
-                                    <th class="p-3">Matrícula</th>
-                                    <th class="p-3">Aluno</th>
-                                    <th class="p-3">Série/Turma</th>
-                                    <th class="p-3">Contato Responsável</th>
-                                    <th class="p-3 text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-alunos" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION 5: RESPONSÁVEIS PELA LOCAÇÃO -->
-        <section id="sec-responsaveis" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Form: Cadastrar Atendente -->
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-fit">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
-                        <i class="ph ph-user-gear text-brand-blue"></i>
-                        Cadastrar Atendente / Responsável
-                    </h3>
-                    <form id="form-responsavel" onsubmit="handleSaveResponsavel(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo</label>
-                            <input type="text" id="resp-nome" required placeholder="Ex: Prof. Maria Socorro" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cargo / Função</label>
-                            <input type="text" id="resp-cargo" required placeholder="Ex: Bibliotecária / Auxiliar" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
-                        </div>
-
-                        <button type="submit" class="w-full bg-brand-blue hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2">
-                            <i class="ph ph-floppy-disk"></i>
-                            Cadastrar Responsável
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Lista de Responsáveis -->
-                <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 class="font-bold text-slate-800 text-lg mb-4">Equipe Responsável pelas Liberações</h3>
-                    
                     <div class="overflow-x-auto custom-scrollbar">
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
                                 <tr>
-                                    <th class="p-3">Nome do Atendente</th>
-                                    <th class="p-3">Cargo / Função</th>
-                                    <th class="p-3 text-right">Ação</th>
+                                    <th class="p-3">Data / Hora</th>
+                                    <th class="p-3">Operador</th>
+                                    <th class="p-3">Ação</th>
+                                    <th class="p-3">Detalhes da Atividade</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-responsaveis" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
+                            <tbody id="table-logs" class="divide-y divide-slate-100">
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
+        </div>
     </div>
 
-    <!-- Notification Toast Container -->
+    <!-- MODAL DE TROCA DE SENHA -->
+    <div id="modal-password" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-slate-200">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="ph ph-key text-brand-blue text-xl"></i>
+                    Alterar Minha Senha
+                </h3>
+                <button onclick="closeChangePasswordModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleChangePassword(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Senha Atual</label>
+                    <input type="password" id="pass-current" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nova Senha</label>
+                    <input type="password" id="pass-new" required placeholder="Nova senha..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="pass-confirm" required placeholder="Repita a nova senha..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-brand-blue outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeChangePasswordModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-blue hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm">Atualizar Senha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Container Toast para Mensagens -->
     <div id="toast" class="fixed bottom-5 right-5 bg-navy-800 text-white px-4 py-3 rounded-xl shadow-lg border border-navy-700 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50">
         <i id="toast-icon" class="ph ph-check-circle text-emerald-400 text-xl"></i>
-        <span id="toast-message" class="text-sm font-medium">Ação realizada com sucesso!</span>
+        <span id="toast-message" class="text-sm font-medium">Operação realizada!</span>
     </div>
 
-    <!-- APP JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // Default Mock Data for initial load
         const defaultData = {
+            users: [
+                { user: 'igor', pass: '1234', name: 'Igor Sampaio', cargo: 'Bibliotecário' },
+                { user: 'maria', pass: '1234', name: 'Maria Socorro', cargo: 'Auxiliar de Biblioteca' },
+                { user: 'carlos', pass: '1234', name: 'Carlos Eduard', cargo: 'Atendente' }
+            ],
             alunos: [
                 { id: '1', matricula: '2026-001', nome: 'João Pedro Santos', serie: '8º Ano', turma: 'Turma A', respNome: 'Carlos Santos', respFone: '(88) 99823-1122' },
                 { id: '2', matricula: '2026-002', nome: 'Beatriz Lima', serie: '9º Ano', turma: 'Turma B', respNome: 'Fernanda Lima', respFone: '(88) 98712-4455' },
                 { id: '3', matricula: '2026-003', nome: 'Lucas Oliveira', serie: '6º Ano', turma: 'Turma A', respNome: 'Renata Oliveira', respFone: '(88) 99123-0099' }
             ],
             acervo: [
-                { id: '1', tombo: 'TMB-1001', titulo: 'O Pequeno Príncipe', autor: 'Antoine de Saint-Exupéry', categoria: 'Literatura Infantil', total: 3, emprestados: 1 },
-                { id: '2', tombo: 'TMB-1002', titulo: 'Dom Casmurro', autor: 'Machado de Assis', categoria: 'Romance / Ficção', total: 2, emprestados: 1 },
-                { id: '3', tombo: 'TMB-1003', titulo: 'Turma da Mônica - Laços', autor: 'Vitor Cafaggi', categoria: 'Quadrinhos / HQs', total: 4, emprestados: 0 }
+                { 
+                    id: '1', 
+                    tombo: '0000005949', 
+                    patrimonio: 'LeaoSamp.2025.1465', 
+                    titulo: 'Contos de Perrault', 
+                    autor: 'Ruth Rocha', 
+                    cdd: '028.5112', 
+                    cutter: 'R672c', 
+                    tag1: 'Contos', 
+                    tag2: 'Infantil', 
+                    tag3: 'Clássicos', 
+                    categoria: 'Literatura Infantil', 
+                    exemplar: '5', 
+                    total: 5, 
+                    emprestados: 1 
+                },
+                { 
+                    id: '2', 
+                    tombo: '0000005924', 
+                    patrimonio: 'LeaoSamp.2025.1440', 
+                    titulo: 'O bicho folharal', 
+                    autor: 'Fernando Viana', 
+                    cdd: '028.5633', 
+                    cutter: 'V614b', 
+                    tag1: 'Folclore', 
+                    tag2: 'Animais', 
+                    tag3: 'Leitura', 
+                    categoria: 'Infantojuvenil', 
+                    exemplar: '6', 
+                    total: 6, 
+                    emprestados: 0 
+                }
             ],
             responsaveis: [
-                { id: '1', nome: 'Dra. Márcia Leão', cargo: 'Bibliotecária Chefe' },
-                { id: '2', nome: 'Prof. Roberto Sampaio', cargo: 'Auxiliar de Biblioteca' }
+                { id: '1', user: 'igor', nome: 'Igor Sampaio', cargo: 'Bibliotecário' },
+                { id: '2', user: 'maria', nome: 'Maria Socorro', cargo: 'Auxiliar de Biblioteca' }
             ],
             emprestimos: [
                 {
@@ -540,62 +799,157 @@
                     alunoId: '1',
                     alunoNome: 'João Pedro Santos',
                     livroId: '1',
-                    livroTitulo: 'O Pequeno Príncipe',
+                    livroTitulo: 'Contos de Perrault',
                     responsavelId: '1',
-                    responsavelNome: 'Dra. Márcia Leão',
-                    dataRetirada: '2026-10-25',
-                    dataPrevista: '2026-11-01',
-                    status: 'ATRASADO', // Computed dynamically based on current date
-                    obs: 'Exemplar bem conservado'
-                },
-                {
-                    id: '2',
-                    alunoId: '2',
-                    alunoNome: 'Beatriz Lima',
-                    livroId: '2',
-                    livroTitulo: 'Dom Casmurro',
-                    responsavelId: '2',
-                    responsavelNome: 'Prof. Roberto Sampaio',
-                    dataRetirada: '2026-11-01',
-                    dataPrevista: '2026-11-08',
-                    status: 'EMPRESTADO',
-                    obs: ''
+                    responsavelNome: 'Igor Sampaio',
+                    dataRetirada: '2026-10-20',
+                    dataPrevista: '2026-10-27',
+                    status: 'ATRASADO',
+                    obs: 'Exemplar com leve marca de uso'
                 }
+            ],
+            logs: [
+                { timestamp: '2026-11-05 07:30:00', operator: 'System', action: 'INICIALIZAÇÃO', details: 'Sistema carregado com sucesso' }
             ]
         };
 
-        // Application State loaded from localStorage or default
         let db = {
+            users: JSON.parse(localStorage.getItem('biblio_users')) || defaultData.users,
             alunos: JSON.parse(localStorage.getItem('biblio_alunos')) || defaultData.alunos,
             acervo: JSON.parse(localStorage.getItem('biblio_acervo')) || defaultData.acervo,
             responsaveis: JSON.parse(localStorage.getItem('biblio_responsaveis')) || defaultData.responsaveis,
-            emprestimos: JSON.parse(localStorage.getItem('biblio_emprestimos')) || defaultData.emprestimos
+            emprestimos: JSON.parse(localStorage.getItem('biblio_emprestimos')) || defaultData.emprestimos,
+            logs: JSON.parse(localStorage.getItem('biblio_logs')) || defaultData.logs
         };
 
-        // Initialize App on DOM Loaded
+        let currentUser = JSON.parse(sessionStorage.getItem('biblio_session_user')) || null;
+
         window.addEventListener('DOMContentLoaded', () => {
-            setCurrentDateDisplay();
-            setDefaultFormDates();
             saveStateToStorage();
-            refreshAllUI();
+            checkAuthSession();
         });
 
-        // Save State to LocalStorage
         function saveStateToStorage() {
+            localStorage.setItem('biblio_users', JSON.stringify(db.users));
             localStorage.setItem('biblio_alunos', JSON.stringify(db.alunos));
             localStorage.setItem('biblio_acervo', JSON.stringify(db.acervo));
             localStorage.setItem('biblio_responsaveis', JSON.stringify(db.responsaveis));
             localStorage.setItem('biblio_emprestimos', JSON.stringify(db.emprestimos));
+            localStorage.setItem('biblio_logs', JSON.stringify(db.logs));
         }
 
-        // Set Current Date Display in Header
+        function logAuditAction(action, details) {
+            const now = new Date();
+            const timestamp = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':' +
+                String(now.getSeconds()).padStart(2, '0');
+
+            const operator = currentUser ? (currentUser.name || currentUser.user) : 'Anônimo';
+
+            db.logs.unshift({ timestamp, operator, action, details });
+            saveStateToStorage();
+        }
+
+        function checkAuthSession() {
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+
+            if (currentUser) {
+                loginScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                mainApp.classList.add('flex');
+                document.getElementById('logged-user-name').textContent = currentUser.name || currentUser.user;
+                document.getElementById('dash-operator-label').textContent = currentUser.name || currentUser.user;
+                initApp();
+            } else {
+                loginScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                mainApp.classList.remove('flex');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const userVal = document.getElementById('login-user').value.trim();
+            const passVal = document.getElementById('login-pass').value.trim();
+
+            const foundUser = db.users.find(u => u.user.toLowerCase() === userVal.toLowerCase() && u.pass === passVal);
+
+            if (foundUser) {
+                currentUser = foundUser;
+                sessionStorage.setItem('biblio_session_user', JSON.stringify(currentUser));
+                document.getElementById('form-login').reset();
+                checkAuthSession();
+                logAuditAction('LOGIN', `Sessão iniciada pelo usuário ${currentUser.user}`);
+                showToast(`Bem-vindo, ${currentUser.name || currentUser.user}!`);
+            } else {
+                showToast("Usuário ou senha incorretos.", "error");
+            }
+        }
+
+        function handleLogout() {
+            if (currentUser) {
+                logAuditAction('LOGOUT', `Sessão finalizada pelo operador ${currentUser.user}`);
+            }
+            currentUser = null;
+            sessionStorage.removeItem('biblio_session_user');
+            checkAuthSession();
+            showToast("Sessão encerrada.");
+        }
+
+        function openChangePasswordModal() {
+            document.getElementById('modal-password').classList.remove('hidden');
+            document.getElementById('modal-password').classList.add('flex');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('modal-password').classList.add('hidden');
+            document.getElementById('modal-password').classList.remove('flex');
+        }
+
+        function handleChangePassword(event) {
+            event.preventDefault();
+            const currentPass = document.getElementById('pass-current').value;
+            const newPass = document.getElementById('pass-new').value;
+            const confirmPass = document.getElementById('pass-confirm').value;
+
+            if (currentPass !== currentUser.pass) {
+                showToast("Senha atual incorreta.", "error");
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                showToast("A nova senha e a confirmação não coincidem.", "error");
+                return;
+            }
+
+            const userInDb = db.users.find(u => u.user.toLowerCase() === currentUser.user.toLowerCase());
+            if (userInDb) {
+                userInDb.pass = newPass;
+                currentUser.pass = newPass;
+                sessionStorage.setItem('biblio_session_user', JSON.stringify(currentUser));
+                saveStateToStorage();
+                logAuditAction('ALTERAÇÃO DE SENHA', `Senha alterada pelo operador ${currentUser.user}`);
+                closeChangePasswordModal();
+                showToast("Senha alterada com sucesso!");
+            }
+        }
+
+        function initApp() {
+            setCurrentDateDisplay();
+            setDefaultFormDates();
+            refreshAllUI();
+        }
+
         function setCurrentDateDisplay() {
             const today = new Date();
             const formatted = today.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            document.getElementById('current-date-display').textContent = formatted;
+            document.getElementById('dash-current-date').textContent = formatted;
         }
 
-        // Auto calculate default return date (+7 days)
         function setDefaultFormDates() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('emp-data-retirada').value = today;
@@ -611,7 +965,26 @@
             }
         }
 
-        // Tab Navigation Switcher
+        function autoGenerateCutter() {
+            const author = document.getElementById('livro-autor').value.trim();
+            const title = document.getElementById('livro-titulo').value.trim();
+            if (!author) return;
+
+            const parts = author.split(' ');
+            const lastName = parts[parts.length - 1].toUpperCase();
+            const letter = lastName.charAt(0);
+            
+            // Simulação simples de número Cutter
+            let hash = 0;
+            for (let i = 0; i < lastName.length; i++) {
+                hash += lastName.charCodeAt(i);
+            }
+            const codeNum = (hash % 800 + 100);
+            const titleLetter = title ? title.charAt(0).toLowerCase() : 'a';
+
+            document.getElementById('livro-cutter').value = `${letter}${codeNum}${titleLetter}`;
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(el => {
@@ -624,10 +997,14 @@
             activeNav.classList.add('bg-navy-700', 'text-white', 'shadow-sm');
             activeNav.classList.remove('text-slate-600', 'hover:bg-slate-200');
 
+            if (tabName === 'etiquetas') {
+                populateLabelSelectOptions();
+                generateLabelsPreview();
+            }
+
             refreshAllUI();
         }
 
-        // Refresh all elements across tabs
         function refreshAllUI() {
             updateEmprestimoStatuses();
             renderDashboard();
@@ -635,10 +1012,10 @@
             renderAcervoTable();
             renderAlunosTable();
             renderResponsaveisTable();
+            renderLogsTable();
             populateFormDropdowns();
         }
 
-        // Dynamically recalculate loan statuses based on today's date
         function updateEmprestimoStatuses() {
             const todayStr = new Date().toISOString().split('T')[0];
             db.emprestimos.forEach(emp => {
@@ -652,18 +1029,15 @@
             });
         }
 
-        // Populate Form Select Dropdowns
         function populateFormDropdowns() {
-            // Alunos Dropdown
             const alunoSelect = document.getElementById('emp-aluno');
             alunoSelect.innerHTML = '<option value="">Selecione o Aluno...</option>';
             db.alunos.forEach(a => {
                 alunoSelect.innerHTML += `<option value="${a.id}">${a.nome} (${a.serie} - ${a.turma})</option>`;
             });
 
-            // Livros Dropdown
             const livroSelect = document.getElementById('emp-livro');
-            livroSelect.innerHTML = '<option value="">Selecione a obra no acervo...</option>';
+            livroSelect.innerHTML = '<option value="">Selecione a obra...</option>';
             db.acervo.forEach(l => {
                 const disponiveis = l.total - (l.emprestados || 0);
                 const isAvailable = disponiveis > 0;
@@ -673,15 +1047,13 @@
                     </option>`;
             });
 
-            // Responsáveis Dropdown
             const respSelect = document.getElementById('emp-responsavel');
-            respSelect.innerHTML = '<option value="">Selecione quem está liberando...</option>';
+            respSelect.innerHTML = '<option value="">Selecione o Atendente...</option>';
             db.responsaveis.forEach(r => {
                 respSelect.innerHTML += `<option value="${r.id}">${r.nome} (${r.cargo})</option>`;
             });
         }
 
-        // --- DASHBOARD RENDER ---
         function renderDashboard() {
             const activeLoans = db.emprestimos.filter(e => e.status === 'EMPRESTADO' || e.status === 'ATRASADO');
             const overdueLoans = db.emprestimos.filter(e => e.status === 'ATRASADO');
@@ -691,7 +1063,6 @@
             document.getElementById('dash-students-count').textContent = db.alunos.length;
             document.getElementById('dash-books-count').textContent = db.acervo.length;
 
-            // Render Urgent / Overdue table
             const urgentTable = document.getElementById('dash-urgent-table');
             urgentTable.innerHTML = '';
 
@@ -719,7 +1090,6 @@
             });
         }
 
-        // --- EMPRÉSTIMOS LOGIC & RENDER ---
         function renderEmprestimosTable() {
             const search = document.getElementById('search-emprestimos').value.toLowerCase();
             const filter = document.getElementById('filter-status-emp').value;
@@ -753,7 +1123,7 @@
                         <td class="p-3">${badge}</td>
                         <td class="p-3 text-center">
                             ${!isDevolvido ? `
-                                <button onclick="handleDevolucao('${e.id}')" title="Marcar como Devolvido" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1 rounded-md transition-colors shadow-sm">
+                                <button onclick="handleDevolucao('${e.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1 rounded-md transition-colors shadow-sm">
                                     Registrar Devolução
                                 </button>
                             ` : `
@@ -781,11 +1151,10 @@
             const respObj = db.responsaveis.find(r => r.id === respId);
 
             if (!alunoObj || !livroObj || !respObj) {
-                showToast("Erro: Selecione todos os campos obrigatórios.", "error");
+                showToast("Erro ao selecionar os dados.", "error");
                 return;
             }
 
-            // Update book stock
             livroObj.emprestados = (livroObj.emprestados || 0) + 1;
 
             const newEmprestimo = {
@@ -803,6 +1172,7 @@
             };
 
             db.emprestimos.unshift(newEmprestimo);
+            logAuditAction('NOVO EMPRÉSTIMO', `Obra "${livroObj.titulo}" para aluno ${alunoObj.nome}`);
             saveStateToStorage();
             refreshAllUI();
 
@@ -817,18 +1187,17 @@
 
             emp.status = 'DEVOLVIDO';
 
-            // Return book stock
             const livroObj = db.acervo.find(l => l.id === emp.livroId);
             if (livroObj && livroObj.emprestados > 0) {
                 livroObj.emprestados -= 1;
             }
 
+            logAuditAction('DEVOLUÇÃO', `Devolução confirmada: "${emp.livroTitulo}" - Aluno: ${emp.alunoNome}`);
             saveStateToStorage();
             refreshAllUI();
             showToast(`Devolução de "${emp.livroTitulo}" confirmada!`);
         }
 
-        // --- ACERVO / MATERIAIS RENDER ---
         function renderAcervoTable() {
             const search = document.getElementById('search-acervo').value.toLowerCase();
             const tbody = document.getElementById('table-acervo');
@@ -837,34 +1206,49 @@
             const filtered = db.acervo.filter(l => 
                 l.titulo.toLowerCase().includes(search) || 
                 l.tombo.toLowerCase().includes(search) ||
-                l.autor.toLowerCase().includes(search)
+                l.autor.toLowerCase().includes(search) ||
+                (l.tag1 && l.tag1.toLowerCase().includes(search)) ||
+                (l.tag2 && l.tag2.toLowerCase().includes(search)) ||
+                (l.tag3 && l.tag3.toLowerCase().includes(search))
             );
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum livro cadastrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Nenhum livro catalogado.</td></tr>`;
                 return;
             }
 
             filtered.forEach(l => {
                 const disponivel = l.total - (l.emprestados || 0);
                 const isLow = disponivel === 0;
+                const authorParts = l.autor.split(' ');
+                const lastName = authorParts[authorParts.length - 1].toUpperCase();
+
+                const tagsHTML = [l.tag1, l.tag2, l.tag3]
+                    .filter(Boolean)
+                    .map(t => `<span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-medium border border-blue-100">#${t}</span>`)
+                    .join(' ');
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50">
-                        <td class="p-3 font-mono text-xs font-bold text-navy-700">${l.tombo}</td>
+                        <td class="p-3 font-mono text-xs font-bold text-navy-700">
+                            <div>${l.tombo}</div>
+                            <div class="text-[10px] text-slate-400 font-normal">${l.patrimonio || '-'}</div>
+                        </td>
                         <td class="p-3">
                             <div class="font-semibold text-slate-800">${l.titulo}</div>
                             <div class="text-xs text-slate-500">${l.autor}</div>
                         </td>
-                        <td class="p-3 text-xs">
-                            <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">${l.categoria}</span>
+                        <td class="p-3 font-mono text-xs">
+                            <div class="font-bold text-slate-800">${l.cdd || '000'}</div>
+                            <div class="text-slate-600">${l.cutter || 'C100a'}</div>
                         </td>
+                        <td class="p-3">${tagsHTML || '<span class="text-slate-300 text-xs">-</span>'}</td>
                         <td class="p-3 text-center">
                             <span class="font-semibold ${isLow ? 'text-red-600' : 'text-emerald-600'}">${disponivel}</span>
                             <span class="text-xs text-slate-400"> / ${l.total}</span>
                         </td>
                         <td class="p-3 text-right">
-                            <button onclick="deleteAcervo('${l.id}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir obra">
+                            <button onclick="deleteAcervo('${l.id}')" class="text-slate-400 hover:text-red-600 p-1">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </td>
@@ -875,44 +1259,139 @@
 
         function handleSaveAcervo(event) {
             event.preventDefault();
-            const tombo = document.getElementById('livro-tombo').value;
-            const titulo = document.getElementById('livro-titulo').value;
-            const autor = document.getElementById('livro-autor').value;
+            const tombo = document.getElementById('livro-tombo').value.trim();
+            const patrimonio = document.getElementById('livro-patrimonio').value.trim();
+            const titulo = document.getElementById('livro-titulo').value.trim();
+            const autor = document.getElementById('livro-autor').value.trim();
+            const cdd = document.getElementById('livro-cdd').value.trim();
+            const cutter = document.getElementById('livro-cutter').value.trim();
+            const tag1 = document.getElementById('livro-tag1').value.trim();
+            const tag2 = document.getElementById('livro-tag2').value.trim();
+            const tag3 = document.getElementById('livro-tag3').value.trim();
             const categoria = document.getElementById('livro-categoria').value;
+            const exemplar = document.getElementById('livro-exemplar').value || '1';
             const total = parseInt(document.getElementById('livro-qtd').value) || 1;
 
             const newLivro = {
                 id: Date.now().toString(),
                 tombo,
+                patrimonio,
                 titulo,
                 autor,
+                cdd,
+                cutter,
+                tag1,
+                tag2,
+                tag3,
                 categoria,
+                exemplar,
                 total,
                 emprestados: 0
             };
 
             db.acervo.unshift(newLivro);
+            logAuditAction('CATALOGAÇÃO', `Nova obra cadastrada: "${titulo}" (Tombo: ${tombo}, CDD: ${cdd})`);
             saveStateToStorage();
             refreshAllUI();
 
             document.getElementById('form-acervo').reset();
-            showToast("Livro cadastrado no acervo!");
+            showToast("Material catalogado com sucesso!");
         }
 
         function deleteAcervo(id) {
             const hasActiveLoans = db.emprestimos.some(e => e.livroId === id && e.status !== 'DEVOLVIDO');
             if (hasActiveLoans) {
-                showToast("Não é possível excluir: existem empréstimos ativos para esta obra.", "error");
+                showToast("Não é possível excluir: existem empréstimos ativos.", "error");
                 return;
             }
 
+            const item = db.acervo.find(l => l.id === id);
             db.acervo = db.acervo.filter(l => l.id !== id);
+            logAuditAction('EXCLUSÃO ACERVO', `Obra removida: "${item ? item.titulo : id}"`);
             saveStateToStorage();
             refreshAllUI();
-            showToast("Material removido do acervo.");
+            showToast("Material removido.");
         }
 
-        // --- ALUNOS RENDER ---
+        function populateLabelSelectOptions() {
+            const select = document.getElementById('select-label-book');
+            select.innerHTML = '<option value="ALL">Gerar Etiquetas de TODO O ACERVO CATALOGADO</option>';
+            db.acervo.forEach(l => {
+                select.innerHTML += `<option value="${l.id}">${l.titulo} (Tombo: ${l.tombo} | ex.${l.exemplar})</option>`;
+            });
+        }
+
+        function generateLabelsPreview() {
+            const filterId = document.getElementById('select-label-book').value;
+            const container = document.getElementById('label-print-area');
+            container.innerHTML = '';
+
+            let booksToPrint = db.acervo;
+            if (filterId !== 'ALL') {
+                booksToPrint = db.acervo.filter(l => l.id === filterId);
+            }
+
+            if (booksToPrint.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm">Nenhuma obra cadastrada para gerar etiquetas.</p>';
+                return;
+            }
+
+            booksToPrint.forEach(l => {
+                const authorParts = l.autor.split(' ');
+                const lastName = authorParts[authorParts.length - 1].toUpperCase();
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'bib-label-card shadow-sm rounded border border-slate-300';
+                
+                labelDiv.innerHTML = `
+                    <!-- Lado Esquerdo: Sobrenome + Título + Barcode -->
+                    <div style="width: 55%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding-right: 4px; border-right: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; font-weight: bold; text-transform: uppercase; color: #000; line-height: 1.1;">${lastName}</div>
+                        <div style="font-size: 10px; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-bottom: 2px;">${l.titulo}</div>
+                        <svg id="barcode-${l.id}" style="width: 100%; max-height: 18mm;"></svg>
+                    </div>
+
+                    <!-- Lado Direito: CDD + Cutter + Exemplar + Registro -->
+                    <div style="width: 42%; display: flex; flex-direction: column; justify-content: center; align-items: text-align: right; font-family: monospace; line-height: 1.2; text-align: right;">
+                        <div style="font-size: 11px; font-weight: bold; color: #000;">${l.cdd || '000.00'}</div>
+                        <div style="font-size: 10px; font-weight: bold; color: #1e293b;">${l.cutter || 'C000a'}</div>
+                        <div style="font-size: 9px; color: #334155; margin-top: 4px;">ex.${l.exemplar || '1'}</div>
+                        <div style="font-size: 8px; color: #475569; word-break: break-all;">${l.patrimonio || 'LeaoSamp.2025'}</div>
+                    </div>
+                `;
+
+                container.appendChild(labelDiv);
+
+                // Gerar Código de Barras via JsBarcode
+                setTimeout(() => {
+                    JsBarcode(`#barcode-${l.id}`, l.tombo, {
+                        format: "CODE128",
+                        height: 25,
+                        width: 1.2,
+                        fontSize: 9,
+                        margin: 0,
+                        displayValue: true
+                    });
+                }, 50);
+            });
+        }
+
+        function printLabels() {
+            window.print();
+        }
+
+        function downloadLabelsPDF() {
+            const element = document.getElementById('label-print-area');
+            const opt = {
+                margin:       5,
+                filename:     'Etiquetas_Biblioteca_LeaoSampaio.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
         function renderAlunosTable() {
             const search = document.getElementById('search-alunos').value.toLowerCase();
             const tbody = document.getElementById('table-alunos');
@@ -940,7 +1419,7 @@
                             <div class="text-slate-400">${a.respFone || ''}</div>
                         </td>
                         <td class="p-3 text-right">
-                            <button onclick="deleteAluno('${a.id}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir aluno">
+                            <button onclick="deleteAluno('${a.id}')" class="text-slate-400 hover:text-red-600 p-1">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </td>
@@ -969,33 +1448,35 @@
             };
 
             db.alunos.unshift(newAluno);
+            logAuditAction('CADASTRO ALUNO', `Aluno cadastrado: ${nome} (Matrícula: ${matricula})`);
             saveStateToStorage();
             refreshAllUI();
 
             document.getElementById('form-aluno').reset();
-            showToast("Aluno cadastrado com sucesso!");
+            showToast("Aluno cadastrado!");
         }
 
         function deleteAluno(id) {
             const hasLoans = db.emprestimos.some(e => e.alunoId === id && e.status !== 'DEVOLVIDO');
             if (hasLoans) {
-                showToast("Aluno possui empréstimos pendentes. Não pode ser removido.", "error");
+                showToast("Aluno possui empréstimos pendentes.", "error");
                 return;
             }
 
+            const al = db.alunos.find(a => a.id === id);
             db.alunos = db.alunos.filter(a => a.id !== id);
+            logAuditAction('EXCLUSÃO ALUNO', `Aluno removido: ${al ? al.nome : id}`);
             saveStateToStorage();
             refreshAllUI();
-            showToast("Aluno removido do cadastro.");
+            showToast("Aluno removido.");
         }
 
-        // --- RESPONSÁVEIS RENDER ---
         function renderResponsaveisTable() {
             const tbody = document.getElementById('table-responsaveis');
             tbody.innerHTML = '';
 
             if (db.responsaveis.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-400">Nenhum atendente cadastrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhum operador cadastrado.</td></tr>`;
                 return;
             }
 
@@ -1003,9 +1484,10 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50">
                         <td class="p-3 font-semibold text-slate-800">${r.nome}</td>
+                        <td class="p-3 text-slate-600 font-mono text-xs">${r.user || '-'}</td>
                         <td class="p-3 text-slate-600 text-xs">${r.cargo}</td>
                         <td class="p-3 text-right">
-                            <button onclick="deleteResponsavel('${r.id}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir">
+                            <button onclick="deleteResponsavel('${r.id}')" class="text-slate-400 hover:text-red-600 p-1">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </td>
@@ -1016,35 +1498,147 @@
 
         function handleSaveResponsavel(event) {
             event.preventDefault();
-            const nome = document.getElementById('resp-nome').value;
-            const cargo = document.getElementById('resp-cargo').value;
+            const nome = document.getElementById('resp-nome').value.trim();
+            const user = document.getElementById('resp-user').value.trim();
+            const pass = document.getElementById('resp-pass').value.trim();
+            const cargo = document.getElementById('resp-cargo').value.trim();
+
+            const existingUser = db.users.find(u => u.user.toLowerCase() === user.toLowerCase());
+            if (existingUser) {
+                showToast("Este nome de usuário já está em uso.", "error");
+                return;
+            }
 
             const newResp = {
                 id: Date.now().toString(),
+                user,
                 nome,
                 cargo
             };
 
             db.responsaveis.push(newResp);
+            db.users.push({ user, pass, name: nome, cargo });
+
+            logAuditAction('NOVO OPERADOR', `Operador criado: ${nome} (Login: ${user})`);
             saveStateToStorage();
             refreshAllUI();
 
             document.getElementById('form-responsavel').reset();
-            showToast("Responsável cadastrado!");
+            showToast("Operador cadastrado!");
         }
 
         function deleteResponsavel(id) {
             if (db.responsaveis.length <= 1) {
-                showToast("É necessário manter pelo menos 1 responsável no sistema.", "error");
+                showToast("É necessário manter pelo menos 1 operador.", "error");
                 return;
             }
+
+            const target = db.responsaveis.find(r => r.id === id);
+            if (target) {
+                db.users = db.users.filter(u => u.user !== target.user);
+            }
+
             db.responsaveis = db.responsaveis.filter(r => r.id !== id);
+            logAuditAction('EXCLUSÃO OPERADOR', `Operador removido: ${target ? target.nome : id}`);
             saveStateToStorage();
             refreshAllUI();
-            showToast("Responsável removido.");
+            showToast("Operador removido.");
         }
 
-        // --- HELPER UTILITIES ---
+        function renderLogsTable() {
+            const tbody = document.getElementById('table-logs');
+            tbody.innerHTML = '';
+
+            if (db.logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhum log registrado.</td></tr>`;
+                return;
+            }
+
+            db.logs.forEach(log => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 text-xs font-mono text-slate-500">${log.timestamp}</td>
+                        <td class="p-3 font-semibold text-slate-800 text-xs">${log.operator}</td>
+                        <td class="p-3 text-xs">
+                            <span class="bg-navy-50 text-navy-700 px-2 py-0.5 rounded font-mono font-bold border border-navy-100">${log.action}</span>
+                        </td>
+                        <td class="p-3 text-xs text-slate-600">${log.details}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function clearAuditLogs() {
+            if (confirm("Deseja realmente limpar todo o histórico de logs de auditoria?")) {
+                db.logs = [];
+                logAuditAction('LIMPEZA LOGS', 'Histórico de auditoria limpo pelo operador');
+                saveStateToStorage();
+                renderLogsTable();
+                showToast("Logs limpos!");
+            }
+        }
+
+        function exportToXLSX() {
+            try {
+                const wb = XLSX.utils.book_new();
+
+                const wsEmprestimos = XLSX.utils.json_to_sheet(db.emprestimos);
+                const wsAcervo = XLSX.utils.json_to_sheet(db.acervo);
+                const wsAlunos = XLSX.utils.json_to_sheet(db.alunos);
+                const wsResponsaveis = XLSX.utils.json_to_sheet(db.responsaveis);
+                const wsLogs = XLSX.utils.json_to_sheet(db.logs);
+
+                XLSX.utils.book_append_sheet(wb, wsEmprestimos, "Emprestimos");
+                XLSX.utils.book_append_sheet(wb, wsAcervo, "Acervo_Catalogado");
+                XLSX.utils.book_append_sheet(wb, wsAlunos, "Alunos");
+                XLSX.utils.book_append_sheet(wb, wsResponsaveis, "Operadores");
+                XLSX.utils.book_append_sheet(wb, wsLogs, "Logs_Auditoria");
+
+                const dateStr = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `BiblioEscola_Backup_Completo_${dateStr}.xlsx`);
+                logAuditAction('EXPORTAÇÃO XLSX', 'Backup completo baixado em formato Excel');
+                showToast("Arquivo Excel exportado com sucesso!");
+            } catch (err) {
+                console.error(err);
+                showToast("Erro ao exportar arquivo Excel.", "error");
+            }
+        }
+
+        function importFromXLSX(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    if (workbook.Sheets["Emprestimos"]) {
+                        db.emprestimos = XLSX.utils.sheet_to_json(workbook.Sheets["Emprestimos"]);
+                    }
+                    if (workbook.Sheets["Acervo_Catalogado"]) {
+                        db.acervo = XLSX.utils.sheet_to_json(workbook.Sheets["Acervo_Catalogado"]);
+                    }
+                    if (workbook.Sheets["Alunos"]) {
+                        db.alunos = XLSX.utils.sheet_to_json(workbook.Sheets["Alunos"]);
+                    }
+                    if (workbook.Sheets["Operadores"]) {
+                        db.responsaveis = XLSX.utils.sheet_to_json(workbook.Sheets["Operadores"]);
+                    }
+
+                    logAuditAction('IMPORTAÇÃO XLSX', `Base de dados importada de planilha externa (${file.name})`);
+                    saveStateToStorage();
+                    refreshAllUI();
+                    showToast("Dados importados do Excel com sucesso!");
+                } catch (err) {
+                    console.error(err);
+                    showToast("Formato de arquivo Excel inválido.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         function getStatusBadgeHTML(status) {
             switch (status) {
                 case 'DEVOLVIDO':

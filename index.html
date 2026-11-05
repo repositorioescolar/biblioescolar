@@ -25,15 +25,15 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
 
-  <!-- TELA DE LOGIN / CONSULTA PÚBLICA -->
+  <!-- TELA DE LOGIN / CONSULTA PÚBLICA AVANÇADA -->
   <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 my-auto space-y-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 my-auto space-y-6">
       <div class="text-center">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-700 rounded-full mb-3">
           <i class="ph-bold ph-books text-3xl"></i>
         </div>
         <h2 class="text-2xl font-bold text-slate-800">Biblioteca Escolar</h2>
-        <p class="text-slate-500 text-sm mt-1">Circulação, Acervo e Consulta Pública</p>
+        <p class="text-slate-500 text-sm mt-1">Circulação, Acervo e Multibusca</p>
       </div>
 
       <div id="loginAlert" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg text-center"></div>
@@ -41,7 +41,7 @@
       <!-- ABAS -->
       <div class="flex border-b text-sm font-semibold">
         <button type="button" onclick="switchAuthTab('login')" id="authTabLogin" class="flex-1 py-2 text-blue-700 border-b-2 border-blue-700 text-center cursor-pointer">Acesso Operador</button>
-        <button type="button" onclick="switchAuthTab('public')" id="authTabPublic" class="flex-1 py-2 text-slate-500 text-center cursor-pointer">Consulta Pública (Acervo)</button>
+        <button type="button" onclick="switchAuthTab('public')" id="authTabPublic" class="flex-1 py-2 text-slate-500 text-center cursor-pointer">Consulta Pública (Multibusca)</button>
       </div>
 
       <!-- PAINEL LOGIN -->
@@ -58,4 +58,26 @@
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Senha</label>
             <div class="relative">
               <i class="ph-bold ph-lock-key absolute left-3 top-3 text-slate-400 text-lg"></i>
-              <input type="password" id="loginPass" required autocomplete="current-password" placeholder="Digite a sua senha" class="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text
+              <input type="password" id="loginPass" required autocomplete="current-password" placeholder="Digite a sua senha" class="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg shadow-md transition text-sm flex items-center justify-center gap-2 cursor-pointer">
+            <i class="ph-bold ph-sign-in text-lg"></i> Entrar no Sistema
+          </button>
+        </form>
+      </div>
+
+      <!-- PAINEL CONSULTA PÚBLICA (MULTIBUSCA COM BOOLEANAS) -->
+      <div id="authPanelPublic" class="hidden space-y-4">
+        <p class="text-xs text-slate-600">Multibuscador Avançado (Utilize operadores <b>E</b>, <b>OU</b>, <b>NÃO</b>):</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input type="text" id="pubTitle" placeholder="Título..." class="px-3 py-1.5 border rounded text-xs">
+          <input type="text" id="pubAuthor" placeholder="Autor..." class="px-3 py-1.5 border rounded text-xs">
+          <input type="text" id="pubSubject" placeholder="Assunto / Tag..." class="px-3 py-1.5 border rounded text-xs">
+        </div>
+        <div class="flex gap-2">
+          <select id="pubBoolOp" class="px-2 py-1.5 border rounded text-xs bg-slate-50 font-semibold">
+            <option value="AND">E (Todos os campos)</option>
+            <option value="OR">OU (Qualquer campo)</option>
+          </select>
+          <button type="button" onclick="performAdvancedSearch()" class="flex-1 bg-blue-700 hover:bg-blue-800 text-

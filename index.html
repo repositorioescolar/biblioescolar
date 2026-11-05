@@ -926,4 +926,222 @@
         const st = staff[idx];
         document.getElementById('staffModalTitle').innerText = 'Editar Operador';
         document.getElementById('stName').value = st.name;
-        document.getElementById('stRole').
+        document.getElementById('stRole').value = st.role;
+        document.getElementById('stUser').value = st.user;
+        document.getElementById('stPass').value = st.pass;
+      } else {
+        document.getElementById('staffModalTitle').innerText = 'Cadastrar Operador';
+        document.getElementById('stName').value = '';
+        document.getElementById('stRole').value = '';
+        document.getElementById('stUser').value = '';
+        document.getElementById('stPass').value = '';
+      }
+      document.getElementById('staffModal').classList.remove('hidden');
+    }
+    function closeStaffModal() { document.getElementById('staffModal').classList.add('hidden'); }
+
+    function saveStaff() {
+      const idx = Number(document.getElementById('stIndex').value);
+      const stData = {
+        id: idx >= 0 ? staff[idx].id : staff.length + 1,
+        name: document.getElementById('stName').value,
+        role: document.getElementById('stRole').value,
+        user: document.getElementById('stUser').value,
+        pass: document.getElementById('stPass').value
+      };
+
+      if (idx >= 0) {
+        staff[idx] = stData;
+        logAudit('Equipe', `Operador ${stData.name} atualizado.`);
+      } else {
+        staff.push(stData);
+        logAudit('Equipe', `Operador ${stData.name} cadastrado.`);
+      }
+
+      localStorage.setItem('lib_staff', JSON.stringify(staff));
+      closeStaffModal();
+      renderStaff();
+    }
+
+    function openLoanModal(idx = -1) {
+      document.getElementById('loanIndex').value = idx;
+      document.getElementById('loanStudent').innerHTML = students.map(s => `<option value="${s.name}">${s.name} (${s.grade} ${s.class})</option>`).join('');
+      document.getElementById('loanBook').innerHTML = books.map(b => `<option value="${b.title}">${b.title} (Tombo: ${b.id})</option>`).join('');
+      
+      updateExemplarSelectOptions();
+
+      if (idx >= 0) {
+        const l = loans[idx];
+        document.getElementById('loanModalTitle').innerText = 'Editar Empréstimo';
+        document.getElementById('loanStudent').value = l.student;
+        document.getElementById('loanBook').value = l.book;
+        document.getElementById('loanExemplar').value = l.exemplar || 'ex.1';
+        document.getElementById('loanDate').value = l.date;
+        document.getElementById('loanDueDate').value = l.dueDate;
+      } else {
+        document.getElementById('loanModalTitle').innerText = 'Novo Empréstimo';
+        document.getElementById('loanDate').value = formatDateToBR(new Date());
+        const due = new Date(); due.setDate(due.getDate() + 7);
+        document.getElementById('loanDueDate').value = formatDateToBR(due);
+      }
+      document.getElementById('loanModal').classList.remove('hidden');
+    }
+    function closeLoanModal() { document.getElementById('loanModal').classList.add('hidden'); }
+
+    function updateExemplarSelectOptions() {
+      const bookTitle = document.getElementById('loanBook').value;
+      const b = books.find(x => x.title === bookTitle);
+      const exSelect = document.getElementById('loanExemplar');
+      exSelect.innerHTML = '';
+      const totalEx = b ? b.total : 1;
+      for (let i = 1; i <= totalEx; i++) {
+        exSelect.innerHTML += `<option value="ex.${i}">Exemplar ex.${i}</option>`;
+      }
+    }
+
+    function saveLoan() {
+      const idx = Number(document.getElementById('loanIndex').value);
+      const lData = {
+        id: idx >= 0 ? loans[idx].id : loans.length + 1,
+        student: document.getElementById('loanStudent').value,
+        book: document.getElementById('loanBook').value,
+        exemplar: document.getElementById('loanExemplar').value,
+        date: document.getElementById('loanDate').value,
+        dueDate: document.getElementById('loanDueDate').value,
+        status: idx >= 0 ? loans[idx].status : 'EMPRESTADO',
+        staff: currentUser ? currentUser.name : 'Admin'
+      };
+
+      if (idx >= 0) {
+        loans[idx] = lData;
+        logAudit('Empréstimo', `Empréstimo EMP-${lData.id} atualizado.`);
+      } else {
+        loans.push(lData);
+        logAudit('Empréstimo', `Livro ${lData.book} (${lData.exemplar}) emprestado a ${lData.student}.`);
+      }
+
+      localStorage.setItem('lib_loans', JSON.stringify(loans));
+      closeLoanModal();
+      renderLoans();
+    }
+
+    function returnLoan(id) {
+      const l = loans.find(x => x.id === id);
+      if (l) {
+        l.status = 'DEVOLVIDO';
+        localStorage.setItem('lib_loans', JSON.stringify(loans));
+        logAudit('Devolução', `Livro ${l.book} devolvido por ${l.student}.`);
+        renderLoans();
+      }
+    }
+
+    function openPasswordModal() { document.getElementById('passwordModal').classList.remove('hidden'); }
+    function closePasswordModal() { document.getElementById('passwordModal').classList.add('hidden'); }
+    function changePassword() {
+      const newP = document.getElementById('newPasswordInput').value;
+      if (!newP) return;
+      currentUser.pass = newP;
+      const idx = staff.findIndex(s => s.id === currentUser.id);
+      if (idx !== -1) staff[idx].pass = newP;
+      localStorage.setItem('lib_staff', JSON.stringify(staff));
+      logAudit('Segurança', 'Senha de operador alterada.');
+      alert('Senha alterada com sucesso!');
+      closePasswordModal();
+    }
+
+    function exportBooksXLSX() {
+      const data = books.map(b => ({
+        'Tombo': b.id,
+        'Escola': b.school || 'EEFTI Dr. Leão Sampaio',
+        'Título': b.title,
+        'Autor': b.author,
+        'CDD': b.cdd,
+        'Cutter': b.cutter,
+        'Localização': `${b.cdd} ${b.cutter}`,
+        'Indexadores': (b.tags || []).join(', '),
+        'Total Exemplares': b.total
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Acervo");
+      XLSX.writeFile(wb, "Acervo_Biblioteca.xlsx");
+    }
+
+    function importBooksXLSX(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        
+        rows.forEach((r, idx) => {
+          const nextTombo = String(books.length + idx + 1).padStart(6, '0');
+          books.push({
+            id: r['Tombo'] || nextTombo,
+            school: r['Escola'] || 'EEFTI Dr. Leão Sampaio',
+            title: r['Título'] || 'Sem título',
+            author: r['Autor'] || 'Sem autor',
+            cdd: r['CDD'] || '000.0',
+            cutter: r['Cutter'] || 'A100a',
+            tags: r['Indexadores'] ? String(r['Indexadores']).split(',').map(t => t.trim()) : [],
+            total: Number(r['Total Exemplares'] || 1)
+          });
+        });
+
+        localStorage.setItem('lib_books', JSON.stringify(books));
+        logAudit('Importação', `Importados ${rows.length} livros via Excel.`);
+        renderCatalog();
+        alert(`${rows.length} livros importados com sucesso!`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function exportStudentsXLSX() {
+      const data = students.map(s => ({
+        'Matrícula': s.id,
+        'Nome': s.name,
+        'Série': s.grade,
+        'Turma': s.class
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Alunos");
+      XLSX.writeFile(wb, "Base_Alunos.xlsx");
+    }
+
+    function importStudentsXLSX(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+        const year = new Date().getFullYear();
+
+        rows.forEach((r, idx) => {
+          const nextSeq = students.length + 1 + idx;
+          students.push({
+            id: r['Matrícula'] || `LEAO-${year}-${String(nextSeq).padStart(4, '0')}`,
+            name: r['Nome'] || 'Aluno Sem Nome',
+            grade: r['Série'] || '1º Ano',
+            class: r['Turma'] || 'A'
+          });
+        });
+
+        localStorage.setItem('lib_students', JSON.stringify(students));
+        logAudit('Importação', `Importados ${rows.length} alunos via Excel.`);
+        renderStudents();
+        alert(`${rows.length} alunos importados com sucesso!`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    window.onload = function() { switchAuthTab('public'); };
+  </script>
+</body>
+</html>

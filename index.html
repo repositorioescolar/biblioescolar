@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Gestão e Circulação de Acervo Escolar</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: ui-sans-serif, system-ui, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
@@ -23,10 +22,10 @@
 
       <div id="loginAlert" style="display: none; padding: 12px; background: #fee2e2; border: 1px solid #f87171; color: #b91c1c; font-size: 13px; border-radius: 8px; text-align: center; margin-bottom: 16px;"></div>
 
-      <!-- ABAS -->
-      <div style="display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; font-weight: 600; font-size: 14px; cursor: pointer;">
-        <div id="tabPublic" style="flex: 1; text-align: center; padding: 10px; color: #2563eb; border-bottom: 2px solid #2563eb; margin-bottom: -2px;">Consulta Pública</div>
-        <div id="tabLogin" style="flex: 1; text-align: center; padding: 10px; color: #64748b;">Acesso Operador</div>
+      <!-- ABAS DE NAVEGAÇÃO (BOTÕES DIRETOS) -->
+      <div style="display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; font-weight: 600; font-size: 14px;">
+        <button type="button" id="btnTabPublic" onclick="switchTabAuth('public')" style="flex: 1; text-align: center; padding: 10px; background: none; border: none; border-bottom: 2px solid #2563eb; color: #2563eb; cursor: pointer; font-weight: bold;">Consulta Pública</button>
+        <button type="button" id="btnTabLogin" onclick="switchTabAuth('login')" style="flex: 1; text-align: center; padding: 10px; background: none; border: none; border-bottom: 2px solid transparent; color: #64748b; cursor: pointer;">Acesso Operador</button>
       </div>
 
       <!-- PAINEL PÚBLICO -->
@@ -49,7 +48,7 @@
           <input type="text" id="pubSubject" placeholder="Digite qualquer palavra..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;">
         </div>
 
-        <button type="button" id="btnSearch" style="width: 100%; background: #1d4ed8; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 16px;">
+        <button type="button" id="btnSearch" onclick="performSearch()" style="width: 100%; background: #1d4ed8; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-bottom: 16px;">
           Pesquisar Acervo
         </button>
 
@@ -64,7 +63,7 @@
 
       <!-- PAINEL LOGIN -->
       <div id="panelLogin" style="display: none;">
-        <form id="formLogin">
+        <form onsubmit="handleLogin(event)">
           <div style="margin-bottom: 12px;">
             <label style="font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">Utilizador</label>
             <input type="text" id="loginUser" required style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
@@ -86,16 +85,16 @@
     </div>
   </div>
 
-  <!-- SISTEMA INTERNO (APÓS LOGIN) -->
+  <!-- SISTEMA INTERNO -->
   <div id="appContainer" style="display: none; flex-direction: column; min-height: 100vh;">
     <header style="background: #1e3a8a; color: white; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
       <h1 style="margin: 0; font-size: 18px; font-weight: bold;">Biblioteca Escolar - Painel Interno</h1>
-      <button type="button" id="btnLogout" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Sair</button>
+      <button type="button" onclick="handleLogout()" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Sair</button>
     </header>
     <main style="padding: 24px; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box;">
       <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0;">
         <h3 style="margin-top: 0; font-size: 16px; font-weight: bold;">Sessão Autenticada com Sucesso</h3>
-        <p style="font-size: 14px; color: #475569;">O operador realizou login com êxito.</p>
+        <p style="font-size: 14px; color: #475569;">Acesso liberado ao painel do operador.</p>
       </div>
     </main>
     <footer style="background: #1e293b; color: #94a3b8; padding: 12px; text-align: center; font-size: 12px; margin-top: auto;">
@@ -103,84 +102,44 @@
     </footer>
   </div>
 
-  <!-- SCRIPT ROBUSTO E SEGURO -->
   <script>
-    const sampleBooks = [
-      { id: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos', 'Infantil'] },
-      { id: '000002', school: 'Escola Municipal B', title: 'A Geografia e o Espaço', author: 'Milton Santos', cdd: '910', cutter: 'S237g', tags: ['Geografia', 'Espaço'] }
-    ];
+    // DADOS INICIAIS
+    if (!localStorage.getItem('lib_books')) {
+      localStorage.setItem('lib_books', JSON.stringify([
+        { id: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos', 'Infantil'] }
+      ]));
+    }
+    if (!localStorage.getItem('lib_staff')) {
+      localStorage.setItem('lib_staff', JSON.stringify([
+        { user: 'admin', pass: 'admin123', name: 'Administrador Master' }
+      ]));
+    }
 
-    const sampleStaff = [
-      { user: 'admin', pass: 'admin123', name: 'Administrador Master' }
-    ];
+    // FUNÇÃO PARA TROCAR DE ABA (DIRETA E SEM BLOQUEIO)
+    function switchTabAuth(target) {
+      const btnPub = document.getElementById('btnTabLogin').previousElementSibling || document.getElementById('btnTabPublic');
+      const btnLog = document.getElementById('btnTabLogin');
+      const panelPub = document.getElementById('panelPublic');
+      const panelLog = document.getElementById('panelLogin');
 
-    // Garantir dados iniciais
-    if (!localStorage.getItem('lib_books')) localStorage.setItem('lib_books', JSON.stringify(sampleBooks));
-    if (!localStorage.getItem('lib_staff')) localStorage.setItem('lib_staff', JSON.stringify(sampleStaff));
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const tabPublic = document.getElementById('tabPublic');
-      const tabLogin = document.getElementById('tabLogin');
-      const panelPublic = document.getElementById('panelPublic');
-      const panelLogin = document.getElementById('panelLogin');
-      const btnSearch = document.getElementById('btnSearch');
-      const formLogin = document.getElementById('formLogin');
-      const btnLogout = document.getElementById('btnLogout');
-      const loginOverlay = document.getElementById('loginOverlay');
-      const appContainer = document.getElementById('appContainer');
-      const loginAlert = document.getElementById('loginAlert');
-
-      // Alternar Abas na Tela Inicial
-      tabPublic.addEventListener('click', () => {
-        tabPublic.style.color = '#2563eb';
-        tabPublic.style.borderBottom = '2px solid #2563eb';
-        tabLogin.style.color = '#64748b';
-        tabLogin.style.borderBottom = 'none';
-        panelPublic.style.display = 'block';
-        panelLogin.style.display = 'none';
-      });
-
-      tabLogin.addEventListener('click', () => {
-        tabLogin.style.color = '#2563eb';
-        tabLogin.style.borderBottom = '2px solid #2563eb';
-        tabPublic.style.color = '#64748b';
-        tabPublic.style.borderBottom = 'none';
+      if (target === 'login') {
+        document.getElementById('btnTabLogin').style.color = '#2563eb';
+        document.getElementById('btnTabLogin').style.borderBottom = '2px solid #2563eb';
+        document.getElementById('btnTabPublic').style.color = '#64748b';
+        document.getElementById('btnTabPublic').style.borderBottom = '2px solid transparent';
         panelLogin.style.display = 'block';
         panelPublic.style.display = 'none';
-      });
+      } else {
+        document.getElementById('btnTabPublic').style.color = '#2563eb';
+        document.getElementById('btnTabPublic').style.borderBottom = '2px solid #2563eb';
+        document.getElementById('btnTabLogin').style.color = '#64748b';
+        document.getElementById('btnTabLogin').style.borderBottom = '2px solid transparent';
+        panelPublic.style.display = 'block';
+        panelLogin.style.display = 'none';
+      }
+    }
 
-      // Ação de Busca Global e Parcial
-      btnSearch.addEventListener('click', () => {
-        const t = (document.getElementById('pubTitle').value || '').toLowerCase().trim();
-        const a = (document.getElementById('pubAuthor').value || '').toLowerCase().trim();
-        const s = (document.getElementById('pubSubject').value || '').toLowerCase().trim();
-        const container = document.getElementById('publicSearchResults');
-
-        if (!t && !a && !s) {
-          container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Preencha pelo menos um campo para pesquisar.</p>';
-          return;
-        }
-
-        const books = JSON.parse(localStorage.getItem('lib_books') || '[]');
-        const results = books.filter(b => {
-          const title = (b.title || '').toLowerCase();
-          const author = (b.author || '').toLowerCase();
-          const school = (b.school || '').toLowerCase();
-          const tags = (b.tags || []).join(' ').toLowerCase();
-
-          const matchT = !t || title.includes(t);
-          const matchA = !a || author.includes(a);
-          const matchS = !s || title.includes(s) || author.includes(s) || school.includes(s) || tags.includes(s);
-
-          return matchT && matchA && matchS;
-        });
-
-        if (results.length === 0) {
-          container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Nenhum material encontrado.</p>';
-          return;
-        }
-
-        container.innerHTML = results.map(b => `
-          <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-            <strong>${b.title}</strong> <span style="color: #64748b;">(${b.author})</span><br>
-            <span style="color: #1e3
+    // BUSCA GLOBAL
+    function performSearch() {
+      const t = (document.getElementById('pubTitle').value || '').toLowerCase().trim();
+      const a = (document.getElementById('pubAuthor').value ||

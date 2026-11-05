@@ -25,7 +25,7 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
 
-  <!-- TELA INICIAL: CONSULTA PÚBLICA (MULTIBUSCA) / LOGIN -->
+  <!-- TELA INICIAL: MULTIBUSCA PÚBLICA / LOGIN -->
   <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 my-auto space-y-6">
       <div class="text-center">
@@ -90,7 +90,7 @@
         </div>
       </div>
 
-      <!-- PAINEL LOGIN OPERADOR -->
+      <!-- PAINEL LOGIN OPERADOR (SEM DICAS DE USUÁRIO/SENHA) -->
       <div id="authPanelLogin" class="hidden space-y-4">
         <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
           <div>
@@ -101,4 +101,829 @@
             </div>
           </div>
           <div>
-            <label class="block text-xs
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Senha</label>
+            <div class="relative">
+              <i class="ph-bold ph-lock-key absolute left-3 top-3 text-slate-400 text-lg"></i>
+              <input type="password" id="loginPass" required autocomplete="current-password" class="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2.5 rounded-lg shadow-md transition text-sm flex items-center justify-center gap-2 cursor-pointer">
+            <i class="ph-bold ph-sign-in text-lg"></i> Entrar no Sistema
+          </button>
+        </form>
+
+        <div class="text-center pt-2 border-t text-[11px] text-slate-500">
+          Bibliotecário: <span class="font-bold text-slate-700">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CABEÇALHO DO SISTEMA INTERNO -->
+  <header id="mainHeader" class="bg-blue-900 text-white shadow-md sticky top-0 z-30 hidden">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="ph-bold ph-books text-2xl text-blue-300"></i>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Biblioteca Escolar</h1>
+          <p class="text-xs text-blue-200">Sistema de Gestão de Acervo</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="text-right text-xs">
+          <span class="block text-blue-200">Operador Ativo:</span>
+          <span id="currentUserDisplay" class="font-bold text-white text-sm">admin</span>
+        </div>
+        <button type="button" onclick="openPasswordModal()" class="bg-blue-800 hover:bg-blue-700 text-blue-100 px-3 py-1.5 rounded text-xs flex items-center gap-1 cursor-pointer">
+          <i class="ph-bold ph-key"></i> Alterar Senha
+        </button>
+        <button type="button" onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs flex items-center gap-1 font-semibold cursor-pointer">
+          <i class="ph-bold ph-sign-out"></i> Sair
+        </button>
+      </div>
+    </div>
+
+    <!-- TABS INTERNAS -->
+    <nav class="bg-blue-950 text-blue-100 px-4 border-t border-blue-800">
+      <div class="max-w-7xl mx-auto flex gap-1 overflow-x-auto text-sm font-medium">
+        <button type="button" onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-chart-pie"></i> Dashboard</button>
+        <button type="button" onclick="switchTab('loans')" id="tab-loans" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-arrows-left-right"></i> Empréstimos</button>
+        <button type="button" onclick="switchTab('students')" id="tab-students" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-student"></i> Alunos</button>
+        <button type="button" onclick="switchTab('catalog')" id="tab-catalog" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-book-open"></i> Acervo</button>
+        <button type="button" onclick="switchTab('labels')" id="tab-labels" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-barcode"></i> Etiquetas</button>
+        <button type="button" onclick="switchTab('staff')" id="tab-staff" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-users-three"></i> Responsáveis</button>
+        <button type="button" onclick="switchTab('audit')" id="tab-audit" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-list-checks"></i> Auditoria</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL INTERNO -->
+  <main id="mainContent" class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full hidden space-y-6">
+
+    <!-- DASHBOARD -->
+    <section id="sec-dashboard" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div onclick="switchTab('loans'); filterLoansBy('EMPRESTADO');" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-blue-500 transition group">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase group-hover:text-blue-600">Empréstimos Ativos</p>
+            <h3 id="dashActiveLoans" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+            <span class="text-[10px] text-blue-600 underline">Clique para visualizar</span>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition"><i class="ph-bold ph-book-bookmark"></i></div>
+        </div>
+
+        <div onclick="switchTab('loans'); filterLoansBy('ATRASADO');" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-red-500 transition group">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase group-hover:text-red-600">Em Atraso</p>
+            <h3 id="dashOverdueLoans" class="text-2xl font-bold text-red-600 mt-1">0</h3>
+            <span class="text-[10px] text-red-600 underline">Clique para ver atrasos</span>
+          </div>
+          <div class="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center text-xl group-hover:bg-red-600 group-hover:text-white transition"><i class="ph-bold ph-warning-circle"></i></div>
+        </div>
+
+        <div onclick="switchTab('students');" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-emerald-500 transition group">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase group-hover:text-emerald-600">Alunos Cadastrados</p>
+            <h3 id="dashTotalStudents" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+            <span class="text-[10px] text-emerald-600 underline">Ver lista completa</span>
+          </div>
+          <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center text-xl group-hover:bg-emerald-600 group-hover:text-white transition"><i class="ph-bold ph-users"></i></div>
+        </div>
+
+        <div onclick="switchTab('catalog');" class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between cursor-pointer hover:border-purple-500 transition group">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase group-hover:text-purple-600">Total no Acervo</p>
+            <h3 id="dashTotalBooks" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+            <span class="text-[10px] text-purple-600 underline">Consultar acervo</span>
+          </div>
+          <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center text-xl group-hover:bg-purple-600 group-hover:text-white transition"><i class="ph-bold ph-books"></i></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO EMPRÉSTIMOS -->
+    <section id="sec-loans" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Gestão de Empréstimos e Rotatividade</h2>
+          <p id="loanFilterNotice" class="text-xs text-blue-600 font-semibold hidden">Exibindo apenas resultados filtrados. <button type="button" onclick="clearLoanFilter()" class="underline text-slate-500 cursor-pointer">Limpar filtro</button></p>
+        </div>
+        <button type="button" onclick="openLoanModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer">
+          <i class="ph-bold ph-plus-circle"></i> Novo Empréstimo
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3">ID</th>
+              <th class="p-3">Aluno</th>
+              <th class="p-3">Material</th>
+              <th class="p-3">Exemplar</th>
+              <th class="p-3">Data Empr. (DD-MM-AAAA)</th>
+              <th class="p-3">Devolução Prevista</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Responsável</th>
+              <th class="p-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="loansTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO ALUNOS -->
+    <section id="sec-students" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 class="text-lg font-bold text-slate-800">Base de Alunos (Matrícula LEAO-YYYY-XXXX)</h2>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <label class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1">
+            <i class="ph-bold ph-file-arrow-up"></i> Importar XLSX
+            <input type="file" accept=".xlsx, .xls" onchange="importStudentsXLSX(event)" class="hidden">
+          </label>
+          <button type="button" onclick="exportStudentsXLSX()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <i class="ph-bold ph-file-arrow-down"></i> Exportar XLSX
+          </button>
+          <button type="button" onclick="openStudentModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <i class="ph-bold ph-user-plus"></i> Novo Aluno
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3">Matrícula</th>
+              <th class="p-3">Nome do Aluno</th>
+              <th class="p-3">Série / Turma</th>
+              <th class="p-3">Turno</th>
+              <th class="p-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO ACERVO -->
+    <section id="sec-catalog" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Catálogo do Acervo</h2>
+          <p id="tagFilterNotice" class="text-xs text-purple-600 font-semibold hidden">Filtrando por tag: <span id="activeTagName" class="underline font-bold"></span> <button type="button" onclick="clearTagFilter()" class="underline text-slate-500 ml-2 cursor-pointer">Limpar filtro</button></p>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <label class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1">
+            <i class="ph-bold ph-file-arrow-up"></i> Importar XLSX
+            <input type="file" accept=".xlsx, .xls" onchange="importBooksXLSX(event)" class="hidden">
+          </label>
+          <button type="button" onclick="exportBooksXLSX()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <i class="ph-bold ph-file-arrow-down"></i> Exportar XLSX
+          </button>
+          <button type="button" onclick="openBookModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <i class="ph-bold ph-plus-circle"></i> Adicionar Livro
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3">Tombo</th>
+              <th class="p-3">Escola</th>
+              <th class="p-3">Título / Autor</th>
+              <th class="p-3">Localização (Class. + Cutter)</th>
+              <th class="p-3">Assunto (Tags)</th>
+              <th class="p-3 text-center">Exemplares</th>
+              <th class="p-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="catalogTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO ETIQUETAS -->
+    <section id="sec-labels" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Gerador Centralizado de Folha de Etiquetas (14 por folha A4)</h2>
+          <p class="text-xs text-slate-500">Selecione uma obra do acervo para gerar e imprimir a folha completa de etiquetas.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="labelBookSelect" class="px-3 py-2 border rounded text-sm w-64"></select>
+          <button type="button" onclick="generateSelectedBookSheet()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer flex items-center gap-1"><i class="ph-bold ph-printer"></i> Gerar Folha</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <div id="printableSheet" class="bg-white p-4 border grid grid-cols-2 gap-2 max-h-[70vh] overflow-y-auto">
+          <p class="text-slate-400 text-center col-span-2 py-10">Selecione um livro acima e clique em "Gerar Folha" para visualizar as 14 etiquetas.</p>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 no-print">
+          <button type="button" onclick="downloadLabelPDF()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-file-pdf"></i> Baixar PDF</button>
+          <button type="button" onclick="window.print()" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-printer"></i> Imprimir</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO RESPONSÁVEIS -->
+    <section id="sec-staff" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center">
+        <h2 class="text-lg font-bold text-slate-800">Equipe e Responsáveis pelas Locações</h2>
+        <button type="button" onclick="openStaffModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+          <i class="ph-bold ph-user-plus"></i> Novo Operador
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3">ID</th>
+              <th class="p-3">Nome</th>
+              <th class="p-3">Cargo / Função</th>
+              <th class="p-3">Utilizador</th>
+              <th class="p-3 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="staffTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO AUDITORIA -->
+    <section id="sec-audit" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border">
+        <h2 class="text-lg font-bold text-slate-800">Registro de Atividades e Rastreabilidade</h2>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3">Data / Hora (DD-MM-AAAA)</th>
+              <th class="p-3">Operador</th>
+              <th class="p-3">Ação</th>
+              <th class="p-3">Detalhes</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- RODAPÉ FIXO DO SISTEMA -->
+  <footer id="mainFooter" class="bg-slate-800 text-slate-400 py-3 text-center text-xs mt-auto border-t border-slate-700 hidden">
+    Bibliotecário: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+  </footer>
+
+  <!-- MODAL ALTERAR SENHA -->
+  <div id="passwordModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-800">Alterar Senha do Operador</h3>
+        <button type="button" onclick="closePasswordModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); changePassword();" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Nova Senha</label>
+          <input type="password" id="newPasswordInput" required class="w-full px-3 py-2 border rounded-lg text-sm">
+        </div>
+        <div class="flex justify-end gap-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar Senha</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL LIVRO -->
+  <div id="bookModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="bookModalTitle" class="font-bold text-slate-800">Cadastro de Livro</h3>
+        <button type="button" onclick="closeBookModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveBook();" class="space-y-3">
+        <input type="hidden" id="bIndex" value="-1">
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold">Tombo</label><input type="text" id="bTombo" readonly class="w-full px-3 py-1.5 border rounded text-sm bg-slate-100 font-mono"></div>
+          <div><label class="text-xs font-semibold">Total Exemplares</label><input type="number" id="bTotal" required min="1" value="1" class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        </div>
+        <div><label class="text-xs font-semibold">Escola onde se encontra</label><input type="text" id="bSchool" required value="EEFTI Dr. Leão Sampaio" class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Título do Livro</label><input type="text" id="bTitle" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Autor (Nome Completo)</label><input type="text" id="bAuthor" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold">Classificação (CDD)</label><input type="text" id="bCdd" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+          <div><label class="text-xs font-semibold">Cutter (Ex: R672c)</label><input type="text" id="bCutter" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        </div>
+        <div><label class="text-xs font-semibold">Assunto / Indexadores (Tags)</label><input type="text" id="bTags" class="w-full px-3 py-1.5 border rounded text-sm" placeholder="Ex: Contos, Infantil"></div>
+        <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ALUNO -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="studentModalTitle" class="font-bold text-slate-800">Cadastrar Aluno</h3>
+        <button type="button" onclick="closeStudentModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveStudent();" class="space-y-3">
+        <input type="hidden" id="sIndex" value="-1">
+        <div><label class="text-xs font-semibold">Matrícula</label><input type="text" id="sId" readonly class="w-full px-3 py-1.5 border rounded text-sm bg-slate-100 font-mono"></div>
+        <div><label class="text-xs font-semibold">Nome Completo</label><input type="text" id="sName" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold">Série / Ano</label><input type="text" id="sGrade" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+          <div><label class="text-xs font-semibold">Turma / Turno</label><input type="text" id="sClass" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL OPERADOR -->
+  <div id="staffModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="staffModalTitle" class="font-bold text-slate-800">Cadastrar Operador</h3>
+        <button type="button" onclick="closeStaffModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveStaff();" class="space-y-3">
+        <input type="hidden" id="stIndex" value="-1">
+        <div><label class="text-xs font-semibold">Nome Completo</label><input type="text" id="stName" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Cargo / Função</label><input type="text" id="stRole" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Utilizador (Login)</label><input type="text" id="stUser" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Senha</label><input type="password" id="stPass" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL EMPRÉSTIMO -->
+  <div id="loanModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="loanModalTitle" class="font-bold text-slate-800">Novo Empréstimo</h3>
+        <button type="button" onclick="closeLoanModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveLoan();" class="space-y-3">
+        <input type="hidden" id="loanIndex" value="-1">
+        <div>
+          <label class="text-xs font-semibold">Aluno</label>
+          <select id="loanStudent" required class="w-full px-3 py-1.5 border rounded text-sm"></select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold">Livro / Material</label>
+          <select id="loanBook" onchange="updateExemplarSelectOptions()" required class="w-full px-3 py-1.5 border rounded text-sm"></select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold">Exemplar</label>
+          <select id="loanExemplar" required class="w-full px-3 py-1.5 border rounded text-sm"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold">Data Empréstimo (DD-MM-AAAA)</label><input type="text" id="loanDate" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+          <div><label class="text-xs font-semibold">Devolução Prevista (DD-MM-AAAA)</label><input type="text" id="loanDueDate" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Efetivar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function formatDateToBR(dateObj) {
+      if (!dateObj) return '';
+      const d = new Date(dateObj);
+      if (isNaN(d.getTime())) return dateObj;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    const defaultStaff = [{ id: 1, name: 'Administrador Master', role: 'Admin', user: 'admin', pass: 'admin123' }];
+    const defaultStudents = [
+      { id: 'LEAO-2026-0001', name: 'Abner Gabriel Lopes Ribeiro', grade: '1º Ano', class: 'A' },
+      { id: 'LEAO-2026-0002', name: 'Ana Júlia Gomes de Almeida', grade: '1º Ano', class: 'A' }
+    ];
+    const defaultBooks = [
+      { id: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos', 'Infantil', 'Clássicos'], total: 7 }
+    ];
+
+    if (!localStorage.getItem('lib_staff')) localStorage.setItem('lib_staff', JSON.stringify(defaultStaff));
+    if (!localStorage.getItem('lib_students')) localStorage.setItem('lib_students', JSON.stringify(defaultStudents));
+    if (!localStorage.getItem('lib_books')) localStorage.setItem('lib_books', JSON.stringify(defaultBooks));
+
+    let currentUser = null;
+    let staff = JSON.parse(localStorage.getItem('lib_staff') || JSON.stringify(defaultStaff));
+    let students = JSON.parse(localStorage.getItem('lib_students') || JSON.stringify(defaultStudents));
+    let books = JSON.parse(localStorage.getItem('lib_books') || JSON.stringify(defaultBooks));
+    let loans = JSON.parse(localStorage.getItem('lib_loans') || '[]');
+    let auditLogs = JSON.parse(localStorage.getItem('lib_audit') || '[]');
+
+    let currentLoanFilter = null;
+    let currentTagFilter = null;
+
+    function switchAuthTab(tab) {
+      if (tab === 'login') {
+        document.getElementById('authTabLogin').className = 'flex-1 py-2 text-blue-700 border-b-2 border-blue-700 text-center font-bold cursor-pointer';
+        document.getElementById('authTabPublic').className = 'flex-1 py-2 text-slate-500 text-center cursor-pointer';
+        document.getElementById('authPanelLogin').classList.remove('hidden');
+        document.getElementById('authPanelPublic').classList.add('hidden');
+      } else {
+        document.getElementById('authTabPublic').className = 'flex-1 py-2 text-blue-700 border-b-2 border-blue-700 text-center font-bold cursor-pointer';
+        document.getElementById('authTabLogin').className = 'flex-1 py-2 text-slate-500 text-center cursor-pointer';
+        document.getElementById('authPanelPublic').classList.remove('hidden');
+        document.getElementById('authPanelLogin').classList.add('hidden');
+      }
+    }
+
+    // MULTIBUSCA GLOBAL E PARCIAL
+    function performAdvancedSearch() {
+      const tQuery = (document.getElementById('pubTitle').value || '').trim().toLowerCase();
+      const aQuery = (document.getElementById('pubAuthor').value || '').trim().toLowerCase();
+      const sQuery = (document.getElementById('pubSubject').value || '').trim().toLowerCase();
+      const notQuery = (document.getElementById('pubNotSubject').value || '').trim().toLowerCase();
+      const op = document.getElementById('pubBoolOp').value;
+      const resContainer = document.getElementById('publicSearchResults');
+
+      if (!tQuery && !aQuery && !sQuery && !notQuery) {
+        resContainer.innerHTML = '<p class="text-slate-400 text-center py-4">Preencha pelo menos um critério para pesquisar.</p>';
+        return;
+      }
+
+      const results = books.filter(b => {
+        const titleStr = (b.title || '').toLowerCase();
+        const authorStr = (b.author || '').toLowerCase();
+        const schoolStr = (b.school || '').toLowerCase();
+        const cddCutterStr = `${b.cdd || ''} ${b.cutter || ''}`.toLowerCase();
+        const tagsStr = (b.tags || []).join(' ').toLowerCase();
+
+        const matchT = !tQuery || titleStr.includes(tQuery);
+        const matchA = !aQuery || authorStr.includes(aQuery);
+        const matchS = !sQuery || titleStr.includes(sQuery) || authorStr.includes(sQuery) || schoolStr.includes(sQuery) || cddCutterStr.includes(sQuery) || tagsStr.includes(sQuery);
+
+        const matchNot = notQuery && (titleStr.includes(notQuery) || authorStr.includes(notQuery) || tagsStr.includes(notQuery));
+
+        if (matchNot) return false;
+
+        let baseMatch = false;
+        if (op === 'AND') {
+          baseMatch = (!tQuery || matchT) && (!aQuery || matchA) && (!sQuery || matchS);
+        } else {
+          baseMatch = (tQuery && matchT) || (aQuery && matchA) || (sQuery && matchS);
+        }
+        return baseMatch;
+      });
+
+      if (results.length === 0) {
+        resContainer.innerHTML = '<p class="text-red-500 text-center py-4">Nenhum material encontrado com estes critérios.</p>';
+        return;
+      }
+
+      resContainer.innerHTML = results.map(b => `
+        <div class="p-2 hover:bg-slate-100">
+          <p class="font-bold text-slate-800">${b.title} <span class="text-xs font-normal text-slate-500">(${b.author})</span></p>
+          <p class="text-xs text-blue-900">Localização: <span class="font-mono font-semibold">${b.cdd} ${b.cutter}</span> | Escola: ${b.school || 'Acervo Geral'}</p>
+          <p class="text-[10px] text-purple-700 mt-0.5">Assuntos: ${(b.tags || []).map(t => `<span onclick="filterByTagPublic('${t}')" class="bg-purple-100 hover:bg-purple-200 px-1.5 py-0.5 rounded cursor-pointer mr-1 font-bold">${t}</span>`).join('')}</p>
+        </div>
+      `).join('');
+    }
+
+    function filterByTagPublic(tag) {
+      document.getElementById('pubSubject').value = tag;
+      performAdvancedSearch();
+    }
+
+    function handleLogin() {
+      const uInput = (document.getElementById('loginUser').value || '').trim();
+      const pInput = (document.getElementById('loginPass').value || '').trim();
+      const alertBox = document.getElementById('loginAlert');
+
+      const found = staff.find(s => s.user.toLowerCase() === uInput.toLowerCase() && s.pass === pInput);
+      if (found) {
+        currentUser = found;
+        document.getElementById('currentUserDisplay').innerText = found.name;
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('mainHeader').classList.remove('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        document.getElementById('mainFooter').classList.remove('hidden');
+        logAudit('Login', `Sessão iniciada por ${found.name}`);
+        switchTab('dashboard');
+      } else {
+        alertBox.innerText = 'Utilizador ou senha incorretos.';
+        alertBox.classList.remove('hidden');
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('mainHeader').classList.add('hidden');
+      document.getElementById('mainContent').classList.add('hidden');
+      document.getElementById('mainFooter').classList.add('hidden');
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginAlert').classList.add('hidden');
+      switchAuthTab('public');
+    }
+
+    function logAudit(action, details) {
+      const log = { date: formatDateToBR(new Date()), user: currentUser ? currentUser.name : 'Sistema', action, details };
+      auditLogs.unshift(log);
+      localStorage.setItem('lib_audit', JSON.stringify(auditLogs));
+    }
+
+    function switchTab(tabId) {
+      ['dashboard', 'loans', 'students', 'catalog', 'labels', 'staff', 'audit'].forEach(t => {
+        document.getElementById(`sec-${t}`)?.classList.add('hidden');
+        document.getElementById(`tab-${t}`)?.classList.remove('border-blue-400', 'text-white');
+      });
+
+      document.getElementById(`sec-${tabId}`)?.classList.remove('hidden');
+      document.getElementById(`tab-${tabId}`)?.classList.add('border-blue-400', 'text-white');
+
+      if (tabId === 'dashboard') updateDashboard();
+      if (tabId === 'loans') renderLoans();
+      if (tabId === 'students') renderStudents();
+      if (tabId === 'catalog') renderCatalog();
+      if (tabId === 'labels') initLabelsTab();
+      if (tabId === 'staff') renderStaff();
+      if (tabId === 'audit') renderAudit();
+    }
+
+    function updateDashboard() {
+      document.getElementById('dashTotalBooks').innerText = books.reduce((acc, b) => acc + Number(b.total || 0), 0);
+      document.getElementById('dashActiveLoans').innerText = loans.filter(l => l.status === 'EMPRESTADO').length;
+      document.getElementById('dashOverdueLoans').innerText = loans.filter(l => l.status === 'ATRASADO').length;
+      document.getElementById('dashTotalStudents').innerText = students.length;
+    }
+
+    function filterLoansBy(status) {
+      currentLoanFilter = status;
+      document.getElementById('loanFilterNotice').classList.remove('hidden');
+      renderLoans();
+    }
+
+    function clearLoanFilter() {
+      currentLoanFilter = null;
+      document.getElementById('loanFilterNotice').classList.add('hidden');
+      renderLoans();
+    }
+
+    function filterByTag(tagName) {
+      currentTagFilter = tagName;
+      document.getElementById('activeTagName').innerText = tagName;
+      document.getElementById('tagFilterNotice').classList.remove('hidden');
+      renderCatalog();
+    }
+
+    function clearTagFilter() {
+      currentTagFilter = null;
+      document.getElementById('tagFilterNotice').classList.add('hidden');
+      renderCatalog();
+    }
+
+    function renderCatalog() {
+      let filtered = books;
+      if (currentTagFilter) {
+        filtered = books.filter(b => (b.tags || []).includes(currentTagFilter));
+      }
+
+      document.getElementById('catalogTableBody').innerHTML = filtered.map((b, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono text-xs font-bold">${b.id}</td>
+          <td class="p-3 text-xs">${b.school || 'EEFTI Dr. Leão Sampaio'}</td>
+          <td class="p-3"><div class="font-semibold">${b.title}</div><div class="text-xs text-slate-500">${b.author}</div></td>
+          <td class="p-3 font-mono text-xs font-semibold text-blue-900">${b.cdd} ${b.cutter}</td>
+          <td class="p-3">
+            ${(b.tags || []).map(t => `<span onclick="filterByTag('${t}')" class="bg-purple-100 hover:bg-purple-200 text-purple-800 text-[10px] px-2 py-0.5 rounded-full mr-1 cursor-pointer font-medium transition">${t}</span>`).join('')}
+          </td>
+          <td class="p-3 text-center font-bold">${b.total}</td>
+          <td class="p-3 text-center space-x-2">
+            <button type="button" onclick="openBookModal(${idx})" class="text-slate-600 hover:text-blue-700 text-base cursor-pointer" title="Editar"><i class="ph-bold ph-pencil-simple"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function initLabelsTab() {
+      const select = document.getElementById('labelBookSelect');
+      select.innerHTML = books.map(b => `<option value="${b.id}">${b.title} (${b.author})</option>`).join('');
+      if (books.length > 0) generateSelectedBookSheet();
+    }
+
+    function generateSelectedBookSheet() {
+      const bookId = document.getElementById('labelBookSelect').value;
+      const b = books.find(x => x.id === bookId);
+      if (!b) return;
+
+      const sheetContainer = document.getElementById('printableSheet');
+      sheetContainer.innerHTML = '';
+
+      for (let i = 1; i <= 14; i++) {
+        const exNum = ((i - 1) % b.total) + 1;
+        sheetContainer.innerHTML += `
+          <div class="border border-slate-400 p-2 rounded bg-white flex justify-between items-center h-24">
+            <div class="overflow-hidden">
+              <p class="font-bold text-[10px] uppercase text-slate-900 truncate max-w-[120px]">${b.author.split(' ').pop()}</p>
+              <p class="text-[10px] text-slate-800 italic truncate max-w-[120px]">${b.title}</p>
+              <svg id="barcode_sheet_${i}" class="my-1"></svg>
+            </div>
+            <div class="text-right text-[10px] space-y-0.5 font-mono">
+              <p class="font-bold text-xs">${b.cdd || '000.0'}</p>
+              <p class="font-bold">${b.cutter || 'A100a'}</p>
+              <p class="text-slate-600 font-bold">ex.${exNum}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      setTimeout(() => {
+        for (let i = 1; i <= 14; i++) {
+          try {
+            JsBarcode(`#barcode_sheet_${i}`, b.id, { format: "CODE128", width: 1, height: 25, displayValue: true, fontSize: 8 });
+          } catch(err) {}
+        }
+      }, 100);
+    }
+
+    function downloadLabelPDF() {
+      const element = document.getElementById('printableSheet');
+      html2pdf().from(element).save(`folha_etiquetas.pdf`);
+    }
+
+    function renderStudents() {
+      document.getElementById('studentsTableBody').innerHTML = students.map((s, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono text-xs font-bold text-blue-900">${s.id}</td>
+          <td class="p-3 font-semibold">${s.name}</td>
+          <td class="p-3">${s.grade} - ${s.class}</td>
+          <td class="p-3">Regular</td>
+          <td class="p-3 text-center">
+            <button type="button" onclick="openStudentModal(${idx})" class="text-slate-600 hover:text-blue-700 cursor-pointer"><i class="ph-bold ph-pencil-simple text-base"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderStaff() {
+      document.getElementById('staffTableBody').innerHTML = staff.map((st, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono text-xs">${st.id}</td>
+          <td class="p-3 font-semibold">${st.name}</td>
+          <td class="p-3">${st.role}</td>
+          <td class="p-3 font-mono text-xs">${st.user}</td>
+          <td class="p-3 text-center">
+            <button type="button" onclick="openStaffModal(${idx})" class="text-slate-600 hover:text-blue-700 cursor-pointer"><i class="ph-bold ph-pencil-simple text-base"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderLoans() {
+      let filtered = loans;
+      if (currentLoanFilter) {
+        filtered = loans.filter(l => l.status === currentLoanFilter);
+      }
+
+      document.getElementById('loansTableBody').innerHTML = filtered.map((l, idx) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono text-xs">EMP-${l.id}</td>
+          <td class="p-3 font-semibold">${l.student}</td>
+          <td class="p-3">${l.book}</td>
+          <td class="p-3 font-mono text-xs font-bold text-blue-800">${l.exemplar || 'ex.1'}</td>
+          <td class="p-3 text-xs">${l.date}</td>
+          <td class="p-3 text-xs">${l.dueDate}</td>
+          <td class="p-3"><span class="px-2 py-1 rounded text-xs font-bold ${l.status === 'EMPRESTADO' ? 'bg-yellow-100 text-yellow-800' : l.status === 'ATRASADO' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">${l.status}</span></td>
+          <td class="p-3 text-xs text-slate-600">${l.staff}</td>
+          <td class="p-3 text-center space-x-1">
+            <button type="button" onclick="openLoanModal(${idx})" class="text-slate-600 hover:text-blue-700 cursor-pointer"><i class="ph-bold ph-pencil-simple text-base"></i></button>
+            ${l.status !== 'DEVOLVIDO' ? `<button type="button" onclick="returnLoan(${l.id})" class="bg-emerald-600 text-white px-2 py-0.5 rounded text-xs font-semibold cursor-pointer">Devolver</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAudit() {
+      document.getElementById('auditTableBody').innerHTML = auditLogs.map(a => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 text-xs text-slate-500">${a.date}</td>
+          <td class="p-3 font-semibold text-xs">${a.user}</td>
+          <td class="p-3 text-xs font-bold text-blue-700">${a.action}</td>
+          <td class="p-3 text-xs text-slate-600">${a.details}</td>
+        </tr>
+      `).join('');
+    }
+
+    function openBookModal(idx = -1) {
+      document.getElementById('bIndex').value = idx;
+      if (idx >= 0) {
+        const b = books[idx];
+        document.getElementById('bookModalTitle').innerText = 'Editar Livro';
+        document.getElementById('bTombo').value = b.id;
+        document.getElementById('bSchool').value = b.school || 'EEFTI Dr. Leão Sampaio';
+        document.getElementById('bTitle').value = b.title;
+        document.getElementById('bAuthor').value = b.author;
+        document.getElementById('bCdd').value = b.cdd;
+        document.getElementById('bCutter').value = b.cutter;
+        document.getElementById('bTags').value = (b.tags || []).join(', ');
+        document.getElementById('bTotal').value = b.total;
+      } else {
+        document.getElementById('bookModalTitle').innerText = 'Cadastro de Livro';
+        const nextTomboNum = books.length > 0 ? Math.max(...books.map(b => parseInt(b.id) || 0)) + 1 : 1;
+        document.getElementById('bTombo').value = String(nextTomboNum).padStart(6, '0');
+        document.getElementById('bSchool').value = 'EEFTI Dr. Leão Sampaio';
+        document.getElementById('bTitle').value = '';
+        document.getElementById('bAuthor').value = '';
+        document.getElementById('bCdd').value = '';
+        document.getElementById('bCutter').value = '';
+        document.getElementById('bTags').value = '';
+        document.getElementById('bTotal').value = 1;
+      }
+      document.getElementById('bookModal').classList.remove('hidden');
+    }
+    function closeBookModal() { document.getElementById('bookModal').classList.add('hidden'); }
+
+    function saveBook() {
+      const idx = Number(document.getElementById('bIndex').value);
+      const bData = {
+        id: document.getElementById('bTombo').value,
+        school: document.getElementById('bSchool').value,
+        title: document.getElementById('bTitle').value,
+        author: document.getElementById('bAuthor').value,
+        cdd: document.getElementById('bCdd').value,
+        cutter: document.getElementById('bCutter').value,
+        tags: document.getElementById('bTags').value.split(',').map(t => t.trim()).filter(Boolean),
+        total: Number(document.getElementById('bTotal').value)
+      };
+
+      if (idx >= 0) {
+        books[idx] = bData;
+        logAudit('Acervo', `Livro ${bData.title} atualizado.`);
+      } else {
+        books.push(bData);
+        logAudit('Acervo', `Livro ${bData.title} cadastrado.`);
+      }
+
+      localStorage.setItem('lib_books', JSON.stringify(books));
+      closeBookModal();
+      renderCatalog();
+    }
+
+    function openStudentModal(idx = -1) {
+      document.getElementById('sIndex').value = idx;
+      if (idx >= 0) {
+        const s = students[idx];
+        document.getElementById('studentModalTitle').innerText = 'Editar Aluno';
+        document.getElementById('sId').value = s.id;
+        document.getElementById('sName').value = s.name;
+        document.getElementById('sGrade').value = s.grade;
+        document.getElementById('sClass').value = s.class;
+      } else {
+        document.getElementById('studentModalTitle').innerText = 'Cadastrar Aluno';
+        const year = new Date().getFullYear();
+        const nextSeq = students.length + 1;
+        document.getElementById('sId').value = `LEAO-${year}-${String(nextSeq).padStart(4, '0')}`;
+        document.getElementById('sName').value = '';
+        document.getElementById('sGrade').value = '';
+        document.getElementById('sClass').value = '';
+      }
+      document.getElementById('studentModal').classList.remove('hidden');
+    }
+    function closeStudentModal() { document.getElementById('studentModal').classList.add('hidden'); }
+
+    function saveStudent() {
+      const idx = Number(document.getElementById('sIndex').value);
+      const sData = {
+        id: document.getElementById('sId').value,
+        name: document.getElementById('sName').value,
+        grade: document.getElementById('sGrade').value,
+        class: document.getElementById('sClass').value
+      };
+
+      if (idx >= 0) {
+        students[idx] = sData;
+        logAudit('Alunos', `Aluno ${sData.name} atualizado.`);
+      } else {
+        students.push(sData);
+        logAudit('Alunos', `Aluno ${sData.name} cadastrado.`);
+      }
+
+      localStorage.setItem('lib_students', JSON.stringify(students));
+      closeStudentModal();
+      renderStudents();
+    }
+
+    function openStaffModal(idx = -1) {
+      document.getElementById('stIndex').value = idx;
+      if (idx >= 0) {
+        const st = staff[idx];
+        document.getElementById('staffModalTitle').innerText = 'Editar Operador';
+        document.getElementById('stName').value = st.name;
+        document.getElementById('stRole').

@@ -142,4 +142,67 @@
     // BUSCA GLOBAL
     function performSearch() {
       const t = (document.getElementById('pubTitle').value || '').toLowerCase().trim();
-      const a = (document.getElementById('pubAuthor').value ||
+      const a = (document.getElementById('pubAuthor').value || '').toLowerCase().trim();
+      const s = (document.getElementById('pubSubject').value || '').toLowerCase().trim();
+      const container = document.getElementById('publicSearchResults');
+
+      if (!t && !a && !s) {
+        container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Preencha pelo menos um campo para pesquisar.</p>';
+        return;
+      }
+
+      const books = JSON.parse(localStorage.getItem('lib_books') || '[]');
+      const results = books.filter(b => {
+        const title = (b.title || '').toLowerCase();
+        const author = (b.author || '').toLowerCase();
+        const school = (b.school || '').toLowerCase();
+        const tags = (b.tags || []).join(' ').toLowerCase();
+
+        return (!t || title.includes(t)) && (!a || author.includes(a)) && (!s || title.includes(s) || author.includes(s) || school.includes(s) || tags.includes(s));
+      });
+
+      if (results.length === 0) {
+        container.innerHTML = '<p style="color: #ef4444; text-align: center; margin: 10px 0;">Nenhum material encontrado.</p>';
+        return;
+      }
+
+      container.innerHTML = results.map(b => `
+        <div style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+          <strong>${b.title}</strong> <span style="color: #64748b;">(${b.author})</span><br>
+          <span style="color: #1e3a8a; font-family: monospace;">Localização: ${b.cdd} ${b.cutter} | Escola: ${b.school}</span>
+        </div>
+      `).join('');
+    }
+
+    // LOGIN
+    function handleLogin(e) {
+      e.preventDefault();
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value.trim();
+      const alertBox = document.getElementById('loginAlert');
+
+      const staff = JSON.parse(localStorage.getItem('lib_staff') || '[]');
+      const found = staff.find(st => st.user.toLowerCase() === u.toLowerCase() && st.pass === p);
+
+      if (found) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'flex';
+        alertBox.style.display = 'none';
+      } else {
+        alertBox.style.display = 'block';
+        alertBox.innerText = 'Utilizador ou senha incorretos.';
+      }
+    }
+
+    // LOGOUT
+    function handleLogout() {
+      document.getElementById('loginUser').value = '';
+      document.getElementById('loginPass').value = '';
+      document.getElementById('loginAlert').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginOverlay').style.display = 'flex';
+      switchTabAuth('public');
+    }
+  </script>
+</body>
+</html>

@@ -25,7 +25,7 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
 
-  <!-- TELA DE LOGIN / CONSULTA PÚBLICA AVANÇADA -->
+  <!-- TELA DE LOGIN / MULTIBUSCA PÚBLICA -->
   <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-85 backdrop-blur-sm z-50 overflow-y-auto flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 my-auto space-y-6">
       <div class="text-center">
@@ -67,17 +67,17 @@
         </form>
       </div>
 
-      <!-- PAINEL CONSULTA PÚBLICA (MULTIBUSCA COM BOOLEANAS) -->
+      <!-- PAINEL MULTIBUSCA PÚBLICA -->
       <div id="authPanelPublic" class="hidden space-y-4">
-        <p class="text-xs text-slate-600">Multibuscador Avançado (Utilize operadores <b>E</b>, <b>OU</b>, <b>NÃO</b>):</p>
+        <p class="text-xs text-slate-600">Multibuscador Avançado (Pesquise por campos específicos com boleanas):</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input type="text" id="pubTitle" placeholder="Título..." class="px-3 py-1.5 border rounded text-xs">
           <input type="text" id="pubAuthor" placeholder="Autor..." class="px-3 py-1.5 border rounded text-xs">
           <input type="text" id="pubSubject" placeholder="Assunto / Tag..." class="px-3 py-1.5 border rounded text-xs">
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
           <select id="pubBoolOp" class="px-2 py-1.5 border rounded text-xs bg-slate-50 font-semibold">
             <option value="AND">E (Todos os campos)</option>
             <option value="OR">OU (Qualquer campo)</option>
           </select>
-          <button type="button" onclick="performAdvancedSearch()" class="flex-1 bg-blue-700 hover:bg-blue-800 text-
+          <button type="button" onclick="performAdvancedSearch()" class="flex-1

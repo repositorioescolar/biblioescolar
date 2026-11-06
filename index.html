@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -17,8 +18,8 @@
   <style>
     @media print {
       body * { visibility: hidden; }
-      #printModalContent, #printModalContent * { visibility: visible; }
-      #printModalContent { position: absolute; left: 0; top: 0; width: 100%; }
+      #printableLabelsSheet, #printableLabelsSheet * { visibility: visible; }
+      #printableLabelsSheet { position: absolute; left: 0; top: 0; width: 100%; }
       .no-print { display: none !important; }
     }
   </style>
@@ -33,7 +34,7 @@
           <i class="ph-bold ph-books text-3xl"></i>
         </div>
         <h2 class="text-2xl font-bold text-slate-800">Biblioteca Escolar</h2>
-        <p class="text-slate-500 text-sm mt-1">Multibusca Global no Acervo e Circulação</p>
+        <p class="text-slate-500 text-sm mt-1">Multibusca Global no Acervo, Repositório e Circulação</p>
       </div>
 
       <div id="loginAlert" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg text-center"></div>
@@ -152,6 +153,9 @@
         <button type="button" onclick="switchTab('loans')" id="tab-loans" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-arrows-left-right"></i> Empréstimos</button>
         <button type="button" onclick="switchTab('students')" id="tab-students" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-student"></i> Alunos</button>
         <button type="button" onclick="switchTab('catalog')" id="tab-catalog" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-book-open"></i> Acervo</button>
+        <button type="button" onclick="switchTab('labels')" id="tab-labels" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-barcode"></i> Etiquetas</button>
+        <button type="button" onclick="switchTab('repository')" id="tab-repository" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-folder-open"></i> Repositório</button>
+        <button type="button" onclick="switchTab('reports')" id="tab-reports" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-chart-bar"></i> Relatórios</button>
         <button type="button" onclick="switchTab('staff')" id="tab-staff" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-users-three"></i> Responsáveis</button>
         <button type="button" onclick="switchTab('audit')" id="tab-audit" class="px-4 py-2.5 border-b-2 border-transparent hover:text-white flex items-center gap-2 transition cursor-pointer"><i class="ph-bold ph-list-checks"></i> Auditoria</button>
       </div>
@@ -272,10 +276,13 @@
     <section id="sec-catalog" class="hidden space-y-4">
       <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 class="text-lg font-bold text-slate-800">Catálogo do Acervo (Com Geração Direta de Etiqueta por Exemplar)</h2>
+          <h2 class="text-lg font-bold text-slate-800">Catálogo do Acervo</h2>
           <p id="tagFilterNotice" class="text-xs text-purple-600 font-semibold hidden">Filtrando por tag: <span id="activeTagName" class="underline font-bold"></span> <button type="button" onclick="clearTagFilter()" class="underline text-slate-500 ml-2 cursor-pointer">Limpar filtro</button></p>
         </div>
-        <div class="flex gap-2 w-full sm:w-auto">
+        <div class="flex gap-2 w-full sm:w-auto flex-wrap">
+          <button type="button" onclick="deleteSelectedBooks()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+            <i class="ph-bold ph-trash"></i> Excluir Selecionados
+          </button>
           <label class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1">
             <i class="ph-bold ph-file-arrow-up"></i> Importar XLSX
             <input type="file" accept=".xlsx, .xls" onchange="importBooksXLSX(event)" class="hidden">
@@ -293,18 +300,97 @@
         <table class="w-full text-left border-collapse text-sm">
           <thead>
             <tr class="bg-slate-800 text-white text-xs uppercase">
+              <th class="p-3 w-10 text-center"><input type="checkbox" id="selectAllBooks" onclick="toggleSelectAllBooks(this)"></th>
               <th class="p-3">Tombo Individual</th>
               <th class="p-3">Escola</th>
               <th class="p-3">Título / Autor</th>
-              <th class="p-3">Localização (Class. + Cutter)</th>
+              <th class="p-3">Localização</th>
               <th class="p-3">Assunto (Tags)</th>
-              <th class="p-3 text-center">Status Exemplar</th>
-              <th class="p-3 text-center">Etiqueta (Quadrado)</th>
+              <th class="p-3 text-center">Status</th>
               <th class="p-3 text-center">Ações</th>
             </tr>
           </thead>
           <tbody id="catalogTableBody" class="divide-y divide-slate-200"></tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO ETIQUETAS (Múltiplas com limite de 22 por folha) -->
+    <section id="sec-labels" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800">Gerador de Etiquetas em Lote (Até 22 por página)</h2>
+          <p class="text-xs text-slate-500">Selecione os exemplares desejados (marcadores na tabela do acervo) e clique abaixo para gerar a folha de etiquetas.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="openLabelsModal()" class="bg-purple-700 hover:bg-purple-800 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer flex items-center gap-1">
+            <i class="ph-bold ph-printer"></i> Gerar Folha com Selecionados (<span id="selectedCountBadge">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+        <div id="labelsPreviewContainer" class="bg-white p-4 border rounded min-h-[300px] flex items-center justify-center">
+          <p class="text-slate-400 text-center">Nenhum exemplar selecionado. Vá até a aba <strong>Acervo</strong>, marque os exemplares desejados e clique em gerar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO REPOSITÓRIO ESCOLAR -->
+    <section id="sec-repository" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 class="text-lg font-bold text-slate-800">Repositório de Projetos Pedagógicos de Professores</h2>
+        <button type="button" onclick="openProjectModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+          <i class="ph-bold ph-plus-circle"></i> Cadastrar Projeto
+        </button>
+      </div>
+
+      <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Preenchido via JS -->
+      </div>
+    </section>
+
+    <!-- SEÇÃO RELATÓRIOS -->
+    <section id="sec-reports" class="hidden space-y-6">
+      <div class="bg-white p-4 rounded-xl shadow-sm border">
+        <h2 class="text-lg font-bold text-slate-800">Relatórios Estatísticos e Circulação</h2>
+        <p class="text-xs text-slate-500">Métricas quantitativas do acervo, circulação e engajamento dos alunos.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Ranking Alunos Mais Leitores -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border space-y-3">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="ph-bold ph-trophy text-amber-500 text-lg"></i> Alunos Mais Leitores (Ranking)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-slate-100 text-slate-600 uppercase">
+                  <th class="p-2">Aluno</th>
+                  <th class="p-2">Série/Turma</th>
+                  <th class="p-2 text-center">Livros Lidos</th>
+                </tr>
+              </thead>
+              <tbody id="topReadersTable" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Relatório de Inserção de Materiais -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border space-y-3">
+          <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2"><i class="ph-bold ph-chart-line text-blue-600 text-lg"></i> Inserções Recentes no Acervo</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-slate-100 text-slate-600 uppercase">
+                  <th class="p-2">Tombo</th>
+                  <th class="p-2">Título</th>
+                  <th class="p-2">Escola</th>
+                </tr>
+              </thead>
+              <tbody id="recentInsertionsTable" class="divide-y"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -360,28 +446,21 @@
     Bibliotecário: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
   </footer>
 
-  <!-- MODAL DE IMPRESSÃO DE ETIQUETA EM FORMATO QUADRADO (Até 22 por página A4) -->
-  <div id="printModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+  <!-- MODAL DE IMPRESSÃO DE ETIQUETAS EM LOTE (Até 22 por página) -->
+  <div id="labelsModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-800 text-sm">Gerador de Etiquetas (Até 22 por página)</h3>
-        <button type="button" onclick="closePrintModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+        <h3 class="font-bold text-slate-800">Folha de Etiquetas (Limite de 22 por página)</h3>
+        <button type="button" onclick="closeLabelsModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
       </div>
 
-      <div class="flex items-center gap-2 mb-2 no-print">
-        <label class="text-xs font-semibold">Quantidade de cópias desta etiqueta:</label>
-        <input type="number" id="labelCountInput" min="1" max="22" value="1" class="w-20 px-2 py-1 border rounded text-xs font-bold">
-        <button type="button" onclick="renderLabelGrid()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1.5 rounded text-xs font-semibold cursor-pointer">Atualizar Grade</button>
-      </div>
-
-      <!-- Grade de até 22 etiquetas -->
-      <div id="printModalContent" class="bg-white p-4 border grid grid-cols-2 sm:grid-cols-3 gap-2">
-        <!-- Preenchido via JS -->
+      <div id="printableLabelsSheet" class="bg-white p-4 border grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <!-- Preenchido dinamicamente -->
       </div>
 
       <div class="flex justify-end gap-2 pt-2 no-print">
-        <button type="button" onclick="downloadSingleLabelPDF()" class="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-file-pdf"></i> Baixar PDF</button>
-        <button type="button" onclick="window.print()" class="bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-printer"></i> Imprimir</button>
+        <button type="button" onclick="downloadLabelsPDF()" class="bg-emerald-600 text-white px-4 py-2 rounded text-xs font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-file-pdf"></i> Baixar PDF</button>
+        <button type="button" onclick="window.print()" class="bg-blue-700 text-white px-4 py-2 rounded text-xs font-semibold flex items-center gap-1 cursor-pointer"><i class="ph-bold ph-printer"></i> Imprimir</button>
       </div>
     </div>
   </div>
@@ -423,13 +502,13 @@
           <div><label class="text-xs font-semibold">Classificação (CDD)</label><input type="text" id="bCdd" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
           <div><label class="text-xs font-semibold">Cutter (Ex: R672c)</label><input type="text" id="bCutter" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
         </div>
-        <div><label class="text-xs font-semibold">Assunto / Indexadores (Tags)</label><input type="text" id="bTags" class="w-full px-3 py-1.5 border rounded text-sm" placeholder="Ex: Contos, Infantil"></div>
+        <div><label class="text-xs font-semibold">Assunto / Indexadores (Separados por vírgula ",")</label><input type="text" id="bTags" class="w-full px-3 py-1.5 border rounded text-sm" placeholder="Ex: Contos Infantis, Literatura Juvenil"></div>
         <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar Exemplares</button></div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL ALUNO (Com edição livre de matrícula) -->
+  <!-- MODAL ALUNO -->
   <div id="studentModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -438,13 +517,34 @@
       </div>
       <form onsubmit="event.preventDefault(); saveStudent();" class="space-y-3">
         <input type="hidden" id="sIndex" value="-1">
-        <div><label class="text-xs font-semibold">Matrícula (Editável)</label><input type="text" id="sId" required class="w-full px-3 py-1.5 border rounded text-sm font-mono bg-white"></div>
+        <div><label class="text-xs font-semibold">Matrícula</label><input type="text" id="sId" required class="w-full px-3 py-1.5 border rounded text-sm font-mono"></div>
         <div><label class="text-xs font-semibold">Nome Completo</label><input type="text" id="sName" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
         <div class="grid grid-cols-2 gap-2">
           <div><label class="text-xs font-semibold">Série / Ano</label><input type="text" id="sGrade" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
           <div><label class="text-xs font-semibold">Turma / Turno</label><input type="text" id="sClass" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
         </div>
         <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PROJETO PEDAGÓGICO (REPOSITÓRIO) -->
+  <div id="projectModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="projectModalTitle" class="font-bold text-slate-800">Cadastro de Projeto Pedagógico</h3>
+        <button type="button" onclick="closeProjectModal()" class="text-slate-400 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveProject();" class="space-y-3">
+        <input type="hidden" id="pIndex" value="-1">
+        <div><label class="text-xs font-semibold">Título do Projeto</label><input type="text" id="pTitle" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div><label class="text-xs font-semibold">Professor(es) Responsável(is)</label><input type="text" id="pAuthor" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="text-xs font-semibold">Disciplina / Área</label><input type="text" id="pArea" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+          <div><label class="text-xs font-semibold">Ano / Turma Aplicada</label><input type="text" id="pTarget" required class="w-full px-3 py-1.5 border rounded text-sm"></div>
+        </div>
+        <div><label class="text-xs font-semibold">Resumo e Prática Pedagógica</label><textarea id="pDesc" rows="4" required class="w-full px-3 py-1.5 border rounded text-sm"></textarea></div>
+        <div class="flex justify-end gap-2 pt-2"><button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Salvar Projeto</button></div>
       </form>
     </div>
   </div>
@@ -467,7 +567,7 @@
     </div>
   </div>
 
-  <!-- MODAL EMPRÉSTIMO -->
+  <!-- MODAL EMPRÉSTIMO (Com campo de busca integrado) -->
   <div id="loanModal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -481,7 +581,8 @@
           <select id="loanStudent" required class="w-full px-3 py-1.5 border rounded text-sm"></select>
         </div>
         <div>
-          <label class="text-xs font-semibold">Exemplar Disponível (Tombo Individual)</label>
+          <label class="text-xs font-semibold">Buscar Exemplar (Tombo ou Título)</label>
+          <input type="text" id="loanBookSearch" oninput="filterLoanBooks()" placeholder="Digite para filtrar..." class="w-full px-3 py-1.5 border rounded text-xs mb-1 bg-slate-50">
           <select id="loanBookExemplar" required class="w-full px-3 py-1.5 border rounded text-sm font-mono"></select>
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -510,23 +611,28 @@
       { id: 'LEAO-2026-0002', name: 'Ana Júlia Gomes de Almeida', grade: '1º Ano', class: 'A' }
     ];
     const defaultBooks = [
-      { id: '000001.1', tomboBase: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos', 'Infantil', 'Clássicos'], exemplarNum: 1, status: 'DISPONÍVEL' }
+      { id: '000001.1', tomboBase: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos Infantis', 'Clássicos'], exemplarNum: 1, status: 'DISPONÍVEL', dateAdded: new Date().toISOString() }
+    ];
+    const defaultProjects = [
+      { id: 1, title: 'Leitura na Praça', author: 'Profª Maria Clara', area: 'Linguagens', target: 'Ensino Fundamental II', desc: 'Projeto de incentivo à leitura fora da sala de aula em praças públicas de Crato.' }
     ];
 
     if (!localStorage.getItem('lib_staff')) localStorage.setItem('lib_staff', JSON.stringify(defaultStaff));
     if (!localStorage.getItem('lib_students')) localStorage.setItem('lib_students', JSON.stringify(defaultStudents));
     if (!localStorage.getItem('lib_books')) localStorage.setItem('lib_books', JSON.stringify(defaultBooks));
+    if (!localStorage.getItem('lib_projects')) localStorage.setItem('lib_projects', JSON.stringify(defaultProjects));
 
     let currentUser = null;
     let staff = JSON.parse(localStorage.getItem('lib_staff') || JSON.stringify(defaultStaff));
     let students = JSON.parse(localStorage.getItem('lib_students') || JSON.stringify(defaultStudents));
     let books = JSON.parse(localStorage.getItem('lib_books') || JSON.stringify(defaultBooks));
+    let projects = JSON.parse(localStorage.getItem('lib_projects') || JSON.stringify(defaultProjects));
     let loans = JSON.parse(localStorage.getItem('lib_loans') || '[]');
     let auditLogs = JSON.parse(localStorage.getItem('lib_audit') || '[]');
 
     let currentLoanFilter = null;
     let currentTagFilter = null;
-    let activeLabelBookIdx = null;
+    let selectedBookIds = new Set();
 
     function switchAuthTab(tab) {
       if (tab === 'login') {
@@ -542,7 +648,6 @@
       }
     }
 
-    // MULTIBUSCA GLOBAL E PARCIAL
     function performAdvancedSearch() {
       const tQuery = (document.getElementById('pubTitle').value || '').trim().toLowerCase();
       const aQuery = (document.getElementById('pubAuthor').value || '').trim().toLowerCase();
@@ -561,7 +666,7 @@
         const authorStr = (b.author || '').toLowerCase();
         const schoolStr = (b.school || '').toLowerCase();
         const cddCutterStr = `${b.cdd || ''} ${b.cutter || ''}`.toLowerCase();
-        const tagsStr = (b.tags || []).join(' ').toLowerCase();
+        const tagsStr = (b.tags || []).join(', ').toLowerCase();
 
         const matchT = !tQuery || titleStr.includes(tQuery);
         const matchA = !aQuery || authorStr.includes(aQuery);
@@ -644,7 +749,7 @@
     }
 
     function switchTab(tabId) {
-      ['dashboard', 'loans', 'students', 'catalog', 'staff', 'audit'].forEach(t => {
+      ['dashboard', 'loans', 'students', 'catalog', 'labels', 'repository', 'reports', 'staff', 'audit'].forEach(t => {
         document.getElementById(`sec-${t}`)?.classList.add('hidden');
         document.getElementById(`tab-${t}`)?.classList.remove('border-blue-400', 'text-white');
       });
@@ -656,6 +761,9 @@
       if (tabId === 'loans') renderLoans();
       if (tabId === 'students') renderStudents();
       if (tabId === 'catalog') renderCatalog();
+      if (tabId === 'labels') renderLabelsPreview();
+      if (tabId === 'repository') renderRepository();
+      if (tabId === 'reports') renderReports();
       if (tabId === 'staff') renderStaff();
       if (tabId === 'audit') renderAudit();
     }
@@ -700,6 +808,7 @@
 
       document.getElementById('catalogTableBody').innerHTML = filtered.map((b, idx) => `
         <tr class="hover:bg-slate-50">
+          <td class="p-3 text-center"><input type="checkbox" class="book-checkbox" value="${b.id}" ${selectedBookIds.has(b.id) ? 'checked' : ''} onchange="toggleBookSelection('${b.id}', this)"></td>
           <td class="p-3 font-mono text-xs font-bold text-blue-900">${b.id}</td>
           <td class="p-3 text-xs">${b.school || 'EEFTI Dr. Leão Sampaio'}</td>
           <td class="p-3"><div class="font-semibold">${b.title}</div><div class="text-xs text-slate-500">${b.author}</div></td>
@@ -710,40 +819,80 @@
           <td class="p-3 text-center">
             <span class="px-2 py-1 rounded text-[10px] font-bold ${b.status === 'DISPONÍVEL' ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}">${b.status}</span>
           </td>
-          <td class="p-3 text-center">
-            <button type="button" onclick="openPrintModalForBook(${idx})" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-semibold cursor-pointer flex items-center justify-center gap-1 mx-auto" title="Gerar Etiqueta Quadrada">
-              <i class="ph-bold ph-barcode"></i> Etiqueta
-            </button>
-          </td>
           <td class="p-3 text-center space-x-2">
             <button type="button" onclick="openBookModal(${idx})" class="text-slate-600 hover:text-blue-700 text-base cursor-pointer" title="Editar"><i class="ph-bold ph-pencil-simple"></i></button>
+            <button type="button" onclick="deleteSingleBook('${b.id}')" class="text-red-500 hover:text-red-700 text-base cursor-pointer" title="Excluir"><i class="ph-bold ph-trash"></i></button>
           </td>
         </tr>
       `).join('');
+      updateSelectedCountBadge();
     }
 
-    // Abertura do Modal de Etiquetas com suporte a até 22 por página
-    function openPrintModalForBook(idx) {
-      activeLabelBookIdx = idx;
-      document.getElementById('labelCountInput').value = 1;
-      renderLabelGrid();
-      document.getElementById('printModal').classList.remove('hidden');
+    function toggleBookSelection(id, checkbox) {
+      if (checkbox.checked) selectedBookIds.add(id);
+      else selectedBookIds.delete(id);
+      updateSelectedCountBadge();
     }
 
-    function renderLabelGrid() {
-      if (activeLabelBookIdx === null) return;
-      const b = books[activeLabelBookIdx];
-      if (!b) return;
+    function toggleSelectAllBooks(master) {
+      const checkboxes = document.querySelectorAll('.book-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = master.checked;
+        if (master.checked) selectedBookIds.add(cb.value);
+        else selectedBookIds.delete(cb.value);
+      });
+      updateSelectedCountBadge();
+    }
 
-      let count = parseInt(document.getElementById('labelCountInput').value) || 1;
-      if (count > 22) count = 22;
-      if (count < 1) count = 1;
+    function updateSelectedCountBadge() {
+      const badge = document.getElementById('selectedCountBadge');
+      if (badge) badge.innerText = selectedBookIds.size;
+    }
 
-      const container = document.getElementById('printModalContent');
-      container.innerHTML = '';
+    function deleteSingleBook(id) {
+      if (confirm(`Deseja realmente excluir o exemplar ${id}?`)) {
+        books = books.filter(b => b.id !== id);
+        selectedBookIds.delete(id);
+        localStorage.setItem('lib_books', JSON.stringify(books));
+        logAudit('Acervo', `Exemplar ${id} excluído.`);
+        renderCatalog();
+      }
+    }
 
-      for (let i = 1; i <= count; i++) {
-        container.innerHTML += `
+    function deleteSelectedBooks() {
+      if (selectedBookIds.size === 0) {
+        alert('Selecione pelo menos um exemplar para excluir.');
+        return;
+      }
+      if (confirm(`Deseja realmente excluir os ${selectedBookIds.size} exemplares selecionados?`)) {
+        books = books.filter(b => !selectedBookIds.has(b.id));
+        logAudit('Acervo', `${selectedBookIds.size} exemplares excluídos em lote.`);
+        selectedBookIds.clear();
+        localStorage.setItem('lib_books', JSON.stringify(books));
+        renderCatalog();
+      }
+    }
+
+    function renderLabelsPreview() {
+      const container = document.getElementById('labelsPreviewContainer');
+      if (selectedBookIds.size === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-center">Nenhum exemplar selecionado. Vá até a aba <strong>Acervo</strong>, marque os exemplares desejados e clique em gerar.</p>`;
+        return;
+      }
+      container.innerHTML = `<div class="text-center space-y-3"><p class="font-bold text-slate-700">${selectedBookIds.size} exemplar(es) selecionado(s) para impressão.</p><button type="button" onclick="openLabelsModal()" class="bg-purple-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Visualizar Folha de Etiquetas (Até 22 por página)</button></div>`;
+    }
+
+    function openLabelsModal() {
+      if (selectedBookIds.size === 0) {
+        alert('Selecione pelo menos um exemplar.');
+        return;
+      }
+      const sheet = document.getElementById('printableLabelsSheet');
+      sheet.innerHTML = '';
+      
+      const list = books.filter(b => selectedBookIds.has(b.id));
+      list.forEach((b, idx) => {
+        sheet.innerHTML += `
           <div class="border border-slate-400 p-2 rounded bg-white flex flex-col justify-between items-center h-44 shadow-sm text-center">
             <div class="w-full">
               <p class="text-[8px] font-bold text-slate-700 uppercase truncate">${b.school || 'EEFTI Dr. Leão Sampaio'}</p>
@@ -751,7 +900,7 @@
               <p class="text-[9px] text-slate-800 italic truncate">${b.title}</p>
             </div>
             <div class="w-full my-1">
-              <svg id="barcode_grid_${i}"></svg>
+              <svg id="barcode_lbl_${idx}"></svg>
             </div>
             <div class="w-full flex justify-between items-center text-[10px] font-mono border-t pt-0.5">
               <span class="font-bold text-slate-900">${b.cdd} ${b.cutter}</span>
@@ -759,24 +908,114 @@
             </div>
           </div>
         `;
-      }
+      });
+
+      document.getElementById('labelsModal').classList.remove('hidden');
 
       setTimeout(() => {
-        for (let i = 1; i <= count; i++) {
+        list.forEach((b, idx) => {
           try {
-            JsBarcode(`#barcode_grid_${i}`, b.id, { format: "CODE128", width: 1, height: 28, displayValue: true, fontSize: 8 });
-          } catch(err) {}
-        }
+            JsBarcode(`#barcode_lbl_${idx}`, b.id, { format: "CODE128", width: 1, height: 28, displayValue: true, fontSize: 8 });
+          } catch(e) {}
+        });
       }, 100);
     }
 
-    function closePrintModal() {
-      document.getElementById('printModal').classList.add('hidden');
+    function closeLabelsModal() {
+      document.getElementById('labelsModal').classList.add('hidden');
     }
 
-    function downloadSingleLabelPDF() {
-      const element = document.getElementById('printModalContent');
-      html2pdf().from(element).save(`etiquetas_acervo.pdf`);
+    function downloadLabelsPDF() {
+      const element = document.getElementById('printableLabelsSheet');
+      html2pdf().from(element).save(`etiquetas_lote.pdf`);
+    }
+
+    function renderRepository() {
+      const grid = document.getElementById('projectsGrid');
+      grid.innerHTML = projects.map((p, idx) => `
+        <div class="bg-white p-5 rounded-xl shadow-sm border space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">${p.area}</span>
+              <h3 class="font-bold text-slate-800 text-base mt-1">${p.title}</h3>
+              <p class="text-xs text-slate-500 font-medium">Prof(a): ${p.author} | Turma: ${p.target}</p>
+            </div>
+            <button type="button" onclick="deleteProject(${idx})" class="text-red-400 hover:text-red-600 cursor-pointer"><i class="ph-bold ph-trash text-base"></i></button>
+          </div>
+          <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg leading-relaxed">${p.desc}</p>
+        </div>
+      `).join('');
+    }
+
+    function openProjectModal() {
+      document.getElementById('pIndex').value = -1;
+      document.getElementById('pTitle').value = '';
+      document.getElementById('pAuthor').value = '';
+      document.getElementById('pArea').value = '';
+      document.getElementById('pTarget').value = '';
+      document.getElementById('pDesc').value = '';
+      document.getElementById('projectModal').classList.remove('hidden');
+    }
+    function closeProjectModal() { document.getElementById('projectModal').classList.add('hidden'); }
+
+    function saveProject() {
+      const idx = Number(document.getElementById('pIndex').value);
+      const data = {
+        id: idx >= 0 ? projects[idx].id : projects.length + 1,
+        title: document.getElementById('pTitle').value,
+        author: document.getElementById('pAuthor').value,
+        area: document.getElementById('pArea').value,
+        target: document.getElementById('pTarget').value,
+        desc: document.getElementById('pDesc').value
+      };
+      if (idx >= 0) projects[idx] = data;
+      else projects.push(data);
+      localStorage.setItem('lib_projects', JSON.stringify(projects));
+      closeProjectModal();
+      renderRepository();
+    }
+
+    function deleteProject(idx) {
+      if (confirm('Deseja excluir este projeto pedagógico?')) {
+        projects.splice(idx, 1);
+        localStorage.setItem('lib_projects', JSON.stringify(projects));
+        renderRepository();
+      }
+    }
+
+    function renderReports() {
+      // Ranking de leitores
+      const readerCounts = {};
+      loans.forEach(l => {
+        readerCounts[l.student] = (readerCounts[l.student] || 0) + 1;
+      });
+      const sortedReaders = Object.entries(readerCounts).sort((a,b) => b[1] - a[1]);
+      
+      const readersTBody = document.getElementById('topReadersTable');
+      if (sortedReaders.length === 0) {
+        readersTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">Nenhum empréstimo registrado ainda.</td></tr>`;
+      } else {
+        readersTBody.innerHTML = sortedReaders.map(([student, count]) => {
+          const stObj = students.find(s => s.name === student);
+          const gradeClass = stObj ? `${stObj.grade} ${stObj.class}` : 'Regular';
+          return `<tr class="hover:bg-slate-50"><td class="p-2 font-semibold">${student}</td><td class="p-2">${gradeClass}</td><td class="p-2 text-center font-bold text-blue-700">${count}</td></tr>`;
+        }).join('');
+      }
+
+      // Inserções de materiais recentes
+      const recentInsTBody = document.getElementById('recentInsertionsTable');
+      const recentBooks = [...books].reverse().slice(0, 10);
+      if (recentBooks.length === 0) {
+        recentInsTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">Nenhum material cadastrado.</td></tr>`;
+      } else {
+        recentInsTBody.innerHTML = recentBooks.map(b => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-2 font-mono font-bold text-blue-900">${b.id}</td>
+            <td class="p-2 font-semibold">${b.title}</td>
+            <td class="p-2">${b.school || 'EEFTI Dr. Leão Sampaio'}</td>
+          </tr>
+        `).join('');
+      }
     }
 
     function renderStudents() {
@@ -880,6 +1119,7 @@
       const author = document.getElementById('bAuthor').value;
       const cdd = document.getElementById('bCdd').value;
       const cutter = document.getElementById('bCutter').value;
+      // Indexadores separados estritamente por vírgula
       const tags = document.getElementById('bTags').value.split(',').map(t => t.trim()).filter(Boolean);
       const totalExemplares = Number(document.getElementById('bTotal').value);
 
@@ -908,7 +1148,8 @@
             cutter: cutter,
             tags: tags,
             exemplarNum: i,
-            status: 'DISPONÍVEL'
+            status: 'DISPONÍVEL',
+            dateAdded: new Date().toISOString()
           });
         }
         logAudit('Acervo', `Obra ${title} cadastrada com ${totalExemplares} exemplares individuais.`);
@@ -1009,9 +1250,8 @@
     function openLoanModal(idx = -1) {
       document.getElementById('loanIndex').value = idx;
       document.getElementById('loanStudent').innerHTML = students.map(s => `<option value="${s.name}">${s.name} (${s.grade} ${s.class})</option>`).join('');
-      
-      const availableBooks = books.filter(b => b.status === 'DISPONÍVEL' || (idx >= 0 && b.id === loans[idx].bookId));
-      document.getElementById('loanBookExemplar').innerHTML = availableBooks.map(b => `<option value="${b.id}">[${b.id}] ${b.title} (Ex. ${b.exemplarNum})</option>`).join('');
+      document.getElementById('loanBookSearch').value = '';
+      populateLoanBookSelect(idx);
 
       if (idx >= 0) {
         const l = loans[idx];
@@ -1028,6 +1268,21 @@
       }
       document.getElementById('loanModal').classList.remove('hidden');
     }
+
+    function populateLoanBookSelect(idx = -1, query = '') {
+      const availableBooks = books.filter(b => b.status === 'DISPONÍVEL' || (idx >= 0 && b.id === loans[idx].bookId));
+      const q = query.trim().toLowerCase();
+      const filtered = availableBooks.filter(b => !q || b.id.toLowerCase().includes(q) || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+
+      document.getElementById('loanBookExemplar').innerHTML = filtered.map(b => `<option value="${b.id}">[${b.id}] ${b.title} - ${b.author}</option>`).join('');
+    }
+
+    function filterLoanBooks() {
+      const q = document.getElementById('loanBookSearch').value;
+      const idx = Number(document.getElementById('loanIndex').value);
+      populateLoanBookSelect(idx, q);
+    }
+
     function closeLoanModal() { document.getElementById('loanModal').classList.add('hidden'); }
 
     function saveLoan() {
@@ -1131,6 +1386,8 @@
         
         rows.forEach((r, idx) => {
           const nextTombo = String(books.length + idx + 1).padStart(6, '0');
+          // Separação restrita estritamente por vírgula
+          const tagsParsed = r['Indexadores'] ? String(r['Indexadores']).split(',').map(t => t.trim()).filter(Boolean) : [];
           books.push({
             id: r['Tombo Individual'] || `${nextTombo}.1`,
             tomboBase: r['Tombo Base'] || nextTombo,
@@ -1139,9 +1396,10 @@
             author: r['Autor'] || 'Sem autor',
             cdd: r['CDD'] || '000.0',
             cutter: r['Cutter'] || 'A100a',
-            tags: r['Indexadores'] ? String(r['Indexadores']).split(',').map(t => t.trim()) : [],
+            tags: tagsParsed,
             exemplarNum: Number(r['Exemplar Nº'] || 1),
-            status: r['Status'] || 'DISPONÍVEL'
+            status: r['Status'] || 'DISPONÍVEL',
+            dateAdded: new Date().toISOString()
           });
         });
 
@@ -1199,3 +1457,4 @@
   </script>
 </body>
 </html>
+```

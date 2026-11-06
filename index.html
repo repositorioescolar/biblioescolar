@@ -30,7 +30,7 @@
       .page-break { page-break-after: always; break-after: page; }
     }
 
-    /* Estilização exata do modelo de etiqueta (Máximo de 14 por folha A4) */
+    /* Estilização exata do modelo de etiqueta (Máximo de 14 por folha A4 em Grid) */
     .label-page {
       width: 210mm;
       min-height: 297mm;
@@ -72,7 +72,7 @@
         <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl shadow-blue-500/30 mb-3">
           <i class="ph-bold ph-books text-3xl"></i>
         </div>
-        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Biblioteca Escolar</h2>
+        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Biblioteca</h2>
         <p class="text-slate-500 text-xs mt-1">Plataforma Integrada de Gestão de Acervo, Circulação e Repositório</p>
       </div>
 
@@ -167,7 +167,7 @@
           <i class="ph-bold ph-books text-xl"></i>
         </div>
         <div>
-          <h1 class="font-bold text-base leading-tight tracking-tight">Biblioteca Escolar</h1>
+          <h1 class="font-bold text-base leading-tight tracking-tight">Biblioteca</h1>
           <p class="text-[11px] text-slate-400">Sistema Integrado de Gestão</p>
         </div>
       </div>
@@ -348,7 +348,7 @@
             <tr class="bg-slate-900 text-white text-[11px] uppercase tracking-wider">
               <th class="p-4 w-10 text-center"><input type="checkbox" id="selectAllBooks" onclick="toggleSelectAllBooks(this)" class="rounded text-blue-600"></th>
               <th class="p-4">Tombo Individual</th>
-              <th class="p-4">Escola</th>
+              <th class="p-4">Local</th>
               <th class="p-4">Título / Autor</th>
               <th class="p-4">Localização (CDD + Cutter)</th>
               <th class="p-4">Assunto (Tags)</th>
@@ -380,7 +380,7 @@
       </div>
     </section>
 
-    <!-- SEÇÃO REPOSITÓRIO ESCOLAR (Com Visualizar PDF) -->
+    <!-- SEÇÃO REPOSITÓRIO ESCOLAR -->
     <section id="sec-repository" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -416,12 +416,12 @@
       </div>
     </section>
 
-    <!-- SEÇÃO RELATÓRIOS (Com Filtros Intuitivos e Visualizar PDF) -->
+    <!-- SEÇÃO RELATÓRIOS (Com Filtros de Data e Inserção por Data) -->
     <section id="sec-reports" class="hidden space-y-6">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-900">Relatório Quantitativo e Qualitativo de Circulação</h2>
-          <p class="text-xs text-slate-500">Métricas analíticas detalhadas do acervo com ferramentas de filtragem interativa.</p>
+          <p class="text-xs text-slate-500">Métricas analíticas detalhadas do acervo com filtragem por data e intervalo.</p>
         </div>
         <div class="flex items-center gap-2">
           <button type="button" onclick="previewReportPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-purple-500/25 cursor-pointer transition">
@@ -433,28 +433,26 @@
         </div>
       </div>
 
-      <!-- PAINEL DE FILTROS INTUITIVOS PARA O RELATÓRIO -->
-      <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <!-- PAINEL DE FILTROS INTUITIVOS POR DATA E INTERVALO -->
+      <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-4 gap-3">
         <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Status de Exemplar</label>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Data Inicial (Cadastro)</label>
+          <input type="date" id="reportStartDate" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Data Final (Cadastro)</label>
+          <input type="date" id="reportEndDate" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status do Exemplar</label>
           <select id="reportFilterStatus" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
             <option value="ALL">Todos os Status</option>
             <option value="DISPONÍVEL">Disponível</option>
             <option value="EMPRESTADO">Emprestado</option>
           </select>
         </div>
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Série / Turma (Alunos)</label>
-          <select id="reportFilterGrade" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
-            <option value="ALL">Todas as Séries / Turmas</option>
-            <option value="1º Ano">1º Ano</option>
-            <option value="2º Ano">2º Ano</option>
-            <option value="3º Ano">3º Ano</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Pesquisa Direta no Relatório</label>
-          <input type="text" id="reportSearchTerm" oninput="renderReports()" placeholder="Filtrar por nome ou título..." class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="flex items-end">
+          <button type="button" onclick="clearReportDateFilters()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-3 py-2.5 rounded-xl text-xs transition cursor-pointer">Limpar Filtros de Data</button>
         </div>
       </div>
 
@@ -462,7 +460,7 @@
         <div class="border-b pb-4 flex justify-between items-end">
           <div>
             <h3 class="text-lg font-bold text-slate-900">Relatório Institucional de Acervo e Circulação</h3>
-            <p class="text-xs text-slate-500 mt-0.5">EEFTI Dr. Leão Sampaio — Biblioteca Escolar</p>
+            <p id="reportDateSubtitle" class="text-xs text-slate-500 mt-0.5">Período Geral / Histórico Completo</p>
           </div>
           <div class="text-right text-[11px] text-slate-500 font-medium">
             Criado por: <span class="font-bold text-slate-800">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
@@ -471,7 +469,7 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-            <span class="text-[11px] font-bold text-slate-400 uppercase">Total de Exemplares Filtrados</span>
+            <span class="text-[11px] font-bold text-slate-400 uppercase">Exemplares no Período</span>
             <p id="repTotalBooks" class="text-2xl font-bold text-slate-900 mt-1">0</p>
           </div>
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
@@ -487,11 +485,12 @@
         <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 space-y-2">
           <h4 class="font-bold text-blue-900 text-xs flex items-center gap-2"><i class="ph-bold ph-chart-line-up text-blue-600 text-base"></i> Análise Qualitativa da Circulação</h4>
           <p class="text-xs text-slate-700 leading-relaxed">
-            O fluxo de circulação de materiais demonstra uma adesão expressiva por parte dos discentes do ensino fundamental e médio. Observa-se maior índice de empréstimos em obras de literatura infantojuvenil e clássicos literários, evidenciando o impacto positivo das práticas de incentivo à leitura na comunidade escolar sob a gestão do acervo.
+            O fluxo de circulação de materiais demonstra uma adesão expressiva por parte dos discentes. Observa-se maior índice de empréstimos em obras de literatura infantojuvenil e clássicos literários, evidenciando o impacto positivo das práticas de incentivo à leitura na comunidade escolar sob a gestão do acervo.
           </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <!-- Ranking Alunos -->
           <div class="space-y-3">
             <h4 class="font-bold text-slate-800 text-xs flex items-center gap-2 border-b pb-2"><i class="ph-bold ph-trophy text-amber-500 text-base"></i> Ranking: Alunos Mais Leitores</h4>
             <div class="overflow-x-auto">
@@ -508,15 +507,16 @@
             </div>
           </div>
 
+          <!-- Relatório de Inserção de Livros por Data -->
           <div class="space-y-3">
-            <h4 class="font-bold text-slate-800 text-xs flex items-center gap-2 border-b pb-2"><i class="ph-bold ph-books text-blue-600 text-base"></i> Inserções Recentes no Acervo</h4>
+            <h4 class="font-bold text-slate-800 text-xs flex items-center gap-2 border-b pb-2"><i class="ph-bold ph-calendar-check text-blue-600 text-base"></i> Relatório de Inserção de Livros por Data</h4>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
                 <thead>
                   <tr class="bg-slate-100 text-slate-600 uppercase text-[10px]">
                     <th class="p-2">Tombo</th>
                     <th class="p-2">Título</th>
-                    <th class="p-2">Escola</th>
+                    <th class="p-2">Data Cadastro</th>
                   </tr>
                 </thead>
                 <tbody id="recentInsertionsTable" class="divide-y divide-slate-100"></tbody>
@@ -579,7 +579,7 @@
     Criado por: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (Bibliotecário - CRB 3/1779)</span>
   </footer>
 
-  <!-- MODAL DE VISUALIZAÇÃO DE PDF (Substituindo download direto) -->
+  <!-- MODAL DE VISUALIZAÇÃO DE PDF -->
   <div id="pdfViewerModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
       <div class="flex justify-between items-center border-b pb-3">
@@ -597,7 +597,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE ETIQUETAS -->
+  <!-- MODAL DE ETIQUETAS (Com paginação contínua) -->
   <div id="labelsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-5xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
@@ -605,9 +605,7 @@
         <button type="button" onclick="closeLabelsModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
       </div>
 
-      <div id="printableLabelsSheet" class="space-y-6 bg-slate-100 p-4 rounded-2xl border">
-        <!-- Preenchido via JS com páginas A4 contendo 14 etiquetas cada -->
-      </div>
+      <div id="printableLabelsSheet" class="space-y-6 bg-slate-100 p-4 rounded-2xl border"></div>
 
       <div class="flex justify-end gap-2 pt-2 no-print">
         <button type="button" onclick="previewLabelsPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition"><i class="ph-bold ph-eye text-sm"></i> Visualizar PDF</button>
@@ -616,7 +614,7 @@
     </div>
   </div>
 
-  <!-- MODAL CONFIGURAÇÃO SUPABASE (Acesso Online) -->
+  <!-- MODAL CONFIGURAÇÃO SUPABASE -->
   <div id="cloudConfigModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b pb-3">
@@ -664,7 +662,7 @@
           <div><label class="text-xs font-semibold text-slate-600">Tombo Base</label><input type="text" id="bTombo" readonly class="w-full px-3 py-2.5 border rounded-2xl text-xs bg-slate-100 font-mono text-slate-600"></div>
           <div><label class="text-xs font-semibold text-slate-600">Qtd. Exemplares</label><input type="number" id="bTotal" required min="1" value="1" class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
         </div>
-        <div><label class="text-xs font-semibold text-slate-600">Escola</label><input type="text" id="bSchool" required value="EEFTI Dr. Leão Sampaio" class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
+        <div><label class="text-xs font-semibold text-slate-600">Local / Setor</label><input type="text" id="bSchool" required value="Biblioteca Central" class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
         <div><label class="text-xs font-semibold text-slate-600">Título do Livro</label><input type="text" id="bTitle" required class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
         <div><label class="text-xs font-semibold text-slate-600">Autor (Nome Completo)</label><input type="text" id="bAuthor" required placeholder="Ex: Ruth Rocha" class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
         <div class="grid grid-cols-2 gap-2">
@@ -815,7 +813,7 @@
       { id: 'LEAO-2026-0002', name: 'Ana Júlia Gomes de Almeida', grade: '1º Ano', class: 'A' }
     ];
     const defaultBooks = [
-      { id: '000001.1', tomboBase: '000001', school: 'EEFTI Dr. Leão Sampaio', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos Infantis', 'Clássicos'], exemplarNum: 1, status: 'DISPONÍVEL', dateAdded: new Date().toISOString() }
+      { id: '000001.1', tomboBase: '000001', school: 'Biblioteca Central', title: 'Contos de Perrault', author: 'Ruth Rocha', cdd: '028.5112', cutter: 'R672c', tags: ['Contos Infantis', 'Clássicos'], exemplarNum: 1, status: 'DISPONÍVEL', dateAdded: new Date().toISOString() }
     ];
     const defaultProjects = [
       { id: 1, title: 'Leitura na Praça', author: 'Profª Maria Clara', area: 'Linguagens', target: 'Ensino Fundamental II', desc: 'Projeto de incentivo à leitura fora da sala de aula em praças públicas de Crato.', pdfName: null, pdfData: null }
@@ -1024,7 +1022,7 @@
         <tr class="hover:bg-slate-50 transition">
           <td class="p-4 text-center"><input type="checkbox" class="book-checkbox rounded text-blue-600" value="${b.id}" ${selectedBookIds.has(b.id) ? 'checked' : ''} onchange="toggleBookSelection('${b.id}', this)"></td>
           <td class="p-4 font-mono text-xs font-bold text-blue-900">${b.id}</td>
-          <td class="p-4 text-xs">${b.school || 'EEFTI Dr. Leão Sampaio'}</td>
+          <td class="p-4 text-xs">${b.school || 'Biblioteca Central'}</td>
           <td class="p-4"><div class="font-semibold text-slate-900">${b.title}</div><div class="text-[11px] text-slate-500">${b.author}</div></td>
           <td class="p-4 font-mono text-xs font-semibold text-slate-700">${b.cdd} ${b.cutter}</td>
           <td class="p-4">
@@ -1175,7 +1173,7 @@
       });
     }
 
-    /* REPOSITÓRIO: VISUALIZAR PDF NO LUGAR DE BAIXAR */
+    /* REPOSITÓRIO: VISUALIZAR PDF */
     function renderRepository() {
       document.getElementById('projectsTableBody').innerHTML = projects.map((p, idx) => `
         <tr class="hover:bg-slate-50 transition">
@@ -1310,7 +1308,6 @@
       }
     }
 
-    /* VISUALIZADOR DE PDF EM MODAL */
     function openPdfViewer(title, dataUri) {
       document.getElementById('pdfViewerTitle').innerText = `Visualizando: ${title}`;
       document.getElementById('pdfViewerIframe').src = dataUri;
@@ -1321,18 +1318,33 @@
       document.getElementById('pdfViewerIframe').src = '';
     }
 
-    /* RELATÓRIOS COM FILTROS INTUITIVOS E VISUALIZAÇÃO PDF */
+    /* RELATÓRIOS COM FILTROS DE DATA, INTERVALO E INSERÇÕES */
     function renderReports() {
+      const startDateStr = document.getElementById('reportStartDate').value;
+      const endDateStr = document.getElementById('reportEndDate').value;
       const statusFilter = document.getElementById('reportFilterStatus').value;
-      const gradeFilter = document.getElementById('reportFilterGrade').value;
-      const searchTerm = (document.getElementById('reportSearchTerm').value || '').trim().toLowerCase();
 
       let filteredBooks = books;
+
       if (statusFilter !== 'ALL') {
         filteredBooks = filteredBooks.filter(b => b.status === statusFilter);
       }
-      if (searchTerm) {
-        filteredBooks = filteredBooks.filter(b => (b.title || '').toLowerCase().includes(searchTerm) || (b.author || '').toLowerCase().includes(searchTerm));
+
+      if (startDateStr || endDateStr) {
+        const start = startDateStr ? new Date(startDateStr + 'T00:00:00') : null;
+        const end = endDateStr ? new Date(endDateStr + 'T23:59:59') : null;
+
+        filteredBooks = filteredBooks.filter(b => {
+          if (!b.dateAdded) return false;
+          const bDate = new Date(b.dateAdded);
+          if (start && bDate < start) return false;
+          if (end && bDate > end) return false;
+          return true;
+        });
+
+        document.getElementById('reportDateSubtitle').innerText = `Período Filtrado: ${startDateStr ? formatDateToBR(startDateStr) : 'Início'} até ${endDateStr ? formatDateToBR(endDateStr) : 'Hoje'}`;
+      } else {
+        document.getElementById('reportDateSubtitle').innerText = `Período Geral / Histórico Completo`;
       }
 
       document.getElementById('repTotalBooks').innerText = filteredBooks.length;
@@ -1342,20 +1354,10 @@
       const readerCounts = {};
       loans.forEach(l => { readerCounts[l.student] = (readerCounts[l.student] || 0) + 1; });
       let sortedReaders = Object.entries(readerCounts).sort((a,b) => b[1] - a[1]);
-
-      if (gradeFilter !== 'ALL') {
-        sortedReaders = sortedReaders.filter(([student]) => {
-          const stObj = students.find(s => s.name === student);
-          return stObj && stObj.grade === gradeFilter;
-        });
-      }
-      if (searchTerm) {
-        sortedReaders = sortedReaders.filter(([student]) => student.toLowerCase().includes(searchTerm));
-      }
       
       const readersTBody = document.getElementById('topReadersTable');
       if (sortedReaders.length === 0) {
-        readersTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum registro encontrado com estes filtros.</td></tr>`;
+        readersTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum empréstimo registrado.</td></tr>`;
       } else {
         readersTBody.innerHTML = sortedReaders.map(([student, count]) => {
           const stObj = students.find(s => s.name === student);
@@ -1364,19 +1366,27 @@
         }).join('');
       }
 
+      /* RELATÓRIO DE INSERÇÃO DE LIVROS POR DATA */
       const recentInsTBody = document.getElementById('recentInsertionsTable');
-      let recentBooks = [...filteredBooks].reverse().slice(0, 10);
+      const recentBooks = [...filteredBooks].reverse();
       if (recentBooks.length === 0) {
-        recentInsTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum material encontrado.</td></tr>`;
+        recentInsTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum livro inserido no período.</td></tr>`;
       } else {
         recentInsTBody.innerHTML = recentBooks.map(b => `
           <tr class="hover:bg-slate-50">
             <td class="p-2 font-mono font-bold text-blue-900">${b.id}</td>
             <td class="p-2 font-semibold text-slate-800">${b.title}</td>
-            <td class="p-2 text-slate-500">${b.school || 'EEFTI Dr. Leão Sampaio'}</td>
+            <td class="p-2 text-slate-500">${formatDateToBR(b.dateAdded)}</td>
           </tr>
         `).join('');
       }
+    }
+
+    function clearReportDateFilters() {
+      document.getElementById('reportStartDate').value = '';
+      document.getElementById('reportEndDate').value = '';
+      document.getElementById('reportFilterStatus').value = 'ALL';
+      renderReports();
     }
 
     function previewReportPDF() {
@@ -1460,7 +1470,7 @@
         const b = books[idx];
         document.getElementById('bookModalTitle').innerText = 'Editar Exemplar';
         document.getElementById('bTombo').value = b.id;
-        document.getElementById('bSchool').value = b.school || 'EEFTI Dr. Leão Sampaio';
+        document.getElementById('bSchool').value = b.school || 'Biblioteca Central';
         document.getElementById('bTitle').value = b.title;
         document.getElementById('bAuthor').value = b.author;
         document.getElementById('bCdd').value = b.cdd;
@@ -1472,7 +1482,7 @@
         document.getElementById('bookModalTitle').innerText = 'Cadastro de Nova Obra';
         const nextTomboNum = books.length > 0 ? Math.max(...books.map(b => parseInt(b.id) || 0)) + 1 : 1;
         document.getElementById('bTombo').value = String(nextTomboNum).padStart(6, '0');
-        document.getElementById('bSchool').value = 'EEFTI Dr. Leão Sampaio';
+        document.getElementById('bSchool').value = 'Biblioteca Central';
         document.getElementById('bTitle').value = '';
         document.getElementById('bAuthor').value = '';
         document.getElementById('bCdd').value = '';
@@ -1507,6 +1517,7 @@
       } else {
         const baseTomboNum = books.length > 0 ? Math.max(...books.map(b => parseInt(b.id) || 0)) + 1 : 1;
         const baseStr = String(baseTomboNum).padStart(6, '0');
+        const nowIso = new Date().toISOString();
 
         for (let i = 1; i <= totalExemplares; i++) {
           const individualId = `${baseStr}.${i}`;
@@ -1521,7 +1532,7 @@
             tags: tags,
             exemplarNum: i,
             status: 'DISPONÍVEL',
-            dateAdded: new Date().toISOString()
+            dateAdded: nowIso
           });
         }
         logAudit('Acervo', `Obra ${title} cadastrada com ${totalExemplares} exemplares individuais.`);
@@ -1729,7 +1740,7 @@
       const data = books.map(b => ({
         'Tombo Individual': b.id,
         'Tombo Base': b.tomboBase || b.id,
-        'Escola': b.school || 'EEFTI Dr. Leão Sampaio',
+        'Local': b.school || 'Biblioteca Central',
         'Título': b.title,
         'Autor': b.author,
         'CDD': b.cdd,
@@ -1737,7 +1748,8 @@
         'Localização': `${b.cdd} ${b.cutter}`,
         'Exemplar Nº': b.exemplarNum,
         'Indexadores': (b.tags || []).join(', '),
-        'Status': b.status
+        'Status': b.status,
+        'Data Cadastro': b.dateAdded ? formatDateToBR(b.dateAdded) : ''
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -1754,6 +1766,7 @@
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet);
+        const nowIso = new Date().toISOString();
         
         rows.forEach((r, idx) => {
           const nextTombo = String(books.length + idx + 1).padStart(6, '0');
@@ -1761,7 +1774,7 @@
           books.push({
             id: r['Tombo Individual'] || `${nextTombo}.1`,
             tomboBase: r['Tombo Base'] || nextTombo,
-            school: r['Escola'] || 'EEFTI Dr. Leão Sampaio',
+            school: r['Local'] || 'Biblioteca Central',
             title: r['Título'] || 'Sem título',
             author: r['Autor'] || 'Sem autor',
             cdd: r['CDD'] || '000.0',
@@ -1769,7 +1782,7 @@
             tags: tagsParsed,
             exemplarNum: Number(r['Exemplar Nº'] || 1),
             status: r['Status'] || 'DISPONÍVEL',
-            dateAdded: new Date().toISOString()
+            dateAdded: nowIso
           });
         });
 

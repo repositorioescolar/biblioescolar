@@ -1,4 +1,3 @@
-``html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -29,12 +28,12 @@
       .no-print { display: none !important; }
     }
 
-    /* Estilização exata do modelo de etiqueta (Máximo de 14 por folha) */
+    /* Estilização exata do modelo de etiqueta (Máximo de 14 por folha A4) */
     .label-box {
       width: 85mm;
       height: 34mm;
       box-sizing: border-box;
-      padding: 8mm 10mm;
+      padding: 6mm 8mm;
       border: 1px dashed #94a3b8;
       border-radius: 6px;
       background: #ffffff;
@@ -340,11 +339,11 @@
       </div>
     </section>
 
-    <!-- SEÇÃO ETIQUETAS (Máximo de 14 por folha) -->
+    <!-- SEÇÃO ETIQUETAS (Máximo 14 por folha) -->
     <section id="sec-labels" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h2 class="text-base font-bold text-slate-900">Gerador de Etiquetas (Máximo de 14 por folha A4)</h2>
+          <h2 class="text-base font-bold text-slate-900">Gerador de Etiquetas (Máximo 14 por folha A4)</h2>
           <p class="text-xs text-slate-500">Selecione os exemplares desejados no acervo para gerar as etiquetas no padrão exato da instituição.</p>
         </div>
         <button type="button" onclick="openLabelsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
@@ -359,7 +358,7 @@
       </div>
     </section>
 
-    <!-- SEÇÃO REPOSITÓRIO ESCOLAR (Seguindo o mecanismo do acervo + PDF) -->
+    <!-- SEÇÃO REPOSITÓRIO ESCOLAR (Com anexo de PDF e Seleção em Lote) -->
     <section id="sec-repository" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -413,7 +412,6 @@
           <p class="text-xs text-slate-500 mt-0.5">EEFTI Dr. Leão Sampaio — Bibliotecário: Igor Filipe Leal Negreiros (CRB 3/1779)</p>
         </div>
 
-        <!-- Métricas Quantitativas Resumidas -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
             <span class="text-[11px] font-bold text-slate-400 uppercase">Total de Exemplares</span>
@@ -429,7 +427,6 @@
           </div>
         </div>
 
-        <!-- Análise Qualitativa Descritiva -->
         <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 space-y-2">
           <h4 class="font-bold text-blue-900 text-xs flex items-center gap-2"><i class="ph-bold ph-chart-line-up text-blue-600 text-base"></i> Análise Qualitativa da Circulação</h4>
           <p class="text-xs text-slate-700 leading-relaxed">
@@ -438,7 +435,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          <!-- Ranking Alunos Mais Leitores -->
           <div class="space-y-3">
             <h4 class="font-bold text-slate-800 text-xs flex items-center gap-2 border-b pb-2"><i class="ph-bold ph-trophy text-amber-500 text-base"></i> Ranking: Alunos Mais Leitores</h4>
             <div class="overflow-x-auto">
@@ -455,7 +451,6 @@
             </div>
           </div>
 
-          <!-- Inserção Recente de Materiais -->
           <div class="space-y-3">
             <h4 class="font-bold text-slate-800 text-xs flex items-center gap-2 border-b pb-2"><i class="ph-bold ph-books text-blue-600 text-base"></i> Inserções Recentes no Acervo</h4>
             <div class="overflow-x-auto">
@@ -522,12 +517,12 @@
 
   </main>
 
-  <!-- RODAPÉ FIXO DO SISTEMA -->
+  <!-- RODAPÉ -->
   <footer id="mainFooter" class="bg-slate-900 text-slate-400 py-3.5 text-center text-xs mt-auto border-t border-slate-800 hidden">
     Bibliotecário: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
   </footer>
 
-  <!-- MODAL DE ETIQUETAS (Máximo de 14 por folha) -->
+  <!-- MODAL DE ETIQUETAS -->
   <div id="labelsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
@@ -535,9 +530,7 @@
         <button type="button" onclick="closeLabelsModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
       </div>
 
-      <div id="printableLabelsSheet" class="bg-white p-6 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Preenchido via JS com o modelo exato -->
-      </div>
+      <div id="printableLabelsSheet" class="bg-white p-6 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
 
       <div class="flex justify-end gap-2 pt-2 no-print">
         <button type="button" onclick="downloadLabelsPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition"><i class="ph-bold ph-file-pdf text-sm"></i> Baixar PDF</button>
@@ -609,7 +602,7 @@
     </div>
   </div>
 
-  <!-- MODAL PROJETO PEDAGÓGICO (Com anexo PDF) -->
+  <!-- MODAL PROJETO PEDAGÓGICO (Com upload PDF) -->
   <div id="projectModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b pb-3">
@@ -992,7 +985,7 @@
         </div>`;
     }
 
-    /* GERAÇÃO DE ETIQUETAS (Máximo 14 por folha A4) */
+    /* ETIQUETAS (Limite de 14 por folha A4) */
     function openLabelsModal() {
       if (selectedBookIds.size === 0) {
         alert('Selecione pelo menos um exemplar.');
@@ -1053,7 +1046,7 @@
       html2pdf().from(element).save(`etiquetas_lombada.pdf`);
     }
 
-    /* REPOSITÓRIO COM MECANISMO IDÊNTICO AO ACERVO + PDF */
+    /* REPOSITÓRIO COM MECANISMO DO ACERVO + PDF */
     function renderRepository() {
       document.getElementById('projectsTableBody').innerHTML = projects.map((p, idx) => `
         <tr class="hover:bg-slate-50 transition">
@@ -1072,13 +1065,11 @@
           </td>
         </tr>
       `).join('');
-      updateSelectedProjectCountBadge();
     }
 
     function toggleProjectSelection(id, checkbox) {
       if (checkbox.checked) selectedProjectIds.add(Number(id));
       else selectedProjectIds.delete(Number(id));
-      updateSelectedProjectCountBadge();
     }
 
     function toggleSelectAllProjects(master) {
@@ -1088,10 +1079,7 @@
         if (master.checked) selectedProjectIds.add(Number(cb.value));
         else selectedProjectIds.delete(Number(cb.value));
       });
-      updateSelectedProjectCountBadge();
     }
-
-    function updateSelectedProjectCountBadge() {}
 
     function deleteSingleProject(id) {
       if (confirm(`Deseja excluir este projeto pedagógico?`)) {
@@ -1680,4 +1668,3 @@
   </script>
 </body>
 </html>
-```

@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -26,21 +27,39 @@
       #printableLabelsSheet, #printableLabelsSheet * { visibility: visible; }
       #printableLabelsSheet { position: absolute; left: 0; top: 0; width: 100%; }
       .no-print { display: none !important; }
+      .page-break { page-break-after: always; break-after: page; }
     }
 
     /* Estilização exata do modelo de etiqueta (Máximo de 14 por folha A4) */
+    .label-page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 10mm;
+      margin: 0 auto;
+      background: white;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: repeat(2, 85mm);
+      grid-template-rows: repeat(7, 34mm);
+      gap: 6mm 10mm;
+      justify-content: center;
+      align-content: start;
+      page-break-after: always;
+      break-after: page;
+    }
+
     .label-box {
       width: 85mm;
       height: 34mm;
       box-sizing: border-box;
-      padding: 6mm 8mm;
-      border: 1px dashed #94a3b8;
+      padding: 5mm 7mm;
+      border: 1px dashed #cbd5e1;
       border-radius: 6px;
       background: #ffffff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      page-break-inside: avoid;
+      overflow: hidden;
     }
   </style>
 </head>
@@ -60,13 +79,13 @@
       <div id="loginAlert" class="hidden p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl text-center font-medium"></div>
 
       <div class="flex border-b border-slate-200 text-xs font-semibold">
-        <button type="button" onclick="switchAuthTab('public')" id="authTabPublic" class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 text-center font-bold">Consulta Pública (Multibusca)</button>
+        <button type="button" onclick="switchAuthTab('public')" id="authTabPublic" class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 text-center font-bold">Consulta Pública (Multibusca Online)</button>
         <button type="button" onclick="switchAuthTab('login')" id="authTabLogin" class="flex-1 py-3 text-slate-400 text-center hover:text-slate-600">Acesso Restrito Operador</button>
       </div>
 
       <!-- MULTIBUSCA PÚBLICA -->
       <div id="authPanelPublic" class="space-y-4">
-        <p class="text-xs text-slate-500 font-medium">Multibuscador Global — Pesquise por qualquer termo ou campo do acervo:</p>
+        <p class="text-xs text-slate-500 font-medium">Multibuscador Global — Consulte o acervo em tempo real de qualquer dispositivo:</p>
         
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
@@ -98,7 +117,7 @@
         </div>
 
         <button type="button" onclick="performAdvancedSearch()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl text-xs font-semibold shadow-lg shadow-blue-500/25 transition flex items-center justify-center gap-2 cursor-pointer">
-          <i class="ph-bold ph-magnifying-glass text-sm"></i> Pesquisar Acervo
+          <i class="ph-bold ph-magnifying-glass text-sm"></i> Pesquisar Acervo Online
         </button>
 
         <div id="publicSearchResults" class="max-h-56 overflow-y-auto space-y-2 text-xs divide-y border border-slate-200 rounded-2xl p-3 bg-slate-50/50">
@@ -106,7 +125,7 @@
         </div>
 
         <div class="text-center pt-2 border-t text-[11px] text-slate-400">
-          Bibliotecário: <span class="font-bold text-slate-600">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+          Criado por: <span class="font-bold text-slate-600">Igor Filipe Leal Negreiros (Bibliotecário - CRB 3/1779)</span>
         </div>
       </div>
 
@@ -133,7 +152,7 @@
         </form>
 
         <div class="text-center pt-2 border-t text-[11px] text-slate-400">
-          Bibliotecário: <span class="font-bold text-slate-600">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+          Criado por: <span class="font-bold text-slate-600">Igor Filipe Leal Negreiros (Bibliotecário - CRB 3/1779)</span>
         </div>
       </div>
 
@@ -155,12 +174,15 @@
 
       <div class="flex items-center gap-4">
         <div id="syncBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Sincronizado
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Nuvem Ativa
         </div>
         <div class="text-right text-xs hidden sm:block">
           <span class="block text-slate-400 text-[10px]">Operador:</span>
           <span id="currentUserDisplay" class="font-bold text-white text-xs">admin</span>
         </div>
+        <button type="button" onclick="openCloudConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 cursor-pointer transition border border-slate-700" title="Configurar Supabase para Acesso Online">
+          <i class="ph-bold ph-cloud-arrow-up"></i> Conexão Online
+        </button>
         <button type="button" onclick="openPasswordModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 cursor-pointer transition border border-slate-700">
           <i class="ph-bold ph-key"></i> Senha
         </button>
@@ -339,15 +361,15 @@
       </div>
     </section>
 
-    <!-- SEÇÃO ETIQUETAS (Máximo 14 por folha) -->
+    <!-- SEÇÃO ETIQUETAS (Com paginação automática para mais de 14 por página) -->
     <section id="sec-labels" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h2 class="text-base font-bold text-slate-900">Gerador de Etiquetas (Máximo 14 por folha A4)</h2>
-          <p class="text-xs text-slate-500">Selecione os exemplares desejados no acervo para gerar as etiquetas no padrão exato da instituição.</p>
+          <h2 class="text-base font-bold text-slate-900">Gerador de Etiquetas (Paginação Automática: Máx. 14 por página)</h2>
+          <p class="text-xs text-slate-500">Selecione os exemplares desejados no acervo para gerar folhas contínuas com 14 etiquetas cada.</p>
         </div>
         <button type="button" onclick="openLabelsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
-          <i class="ph-bold ph-printer text-base"></i> Gerar Folha com Selecionados (<span id="selectedCountBadge">0</span>)
+          <i class="ph-bold ph-printer text-base"></i> Gerar Folhas com Selecionados (<span id="selectedCountBadge">0</span>)
         </button>
       </div>
 
@@ -358,12 +380,12 @@
       </div>
     </section>
 
-    <!-- SEÇÃO REPOSITÓRIO ESCOLAR (Com anexo de PDF e Seleção em Lote) -->
+    <!-- SEÇÃO REPOSITÓRIO ESCOLAR (Com Visualizar PDF) -->
     <section id="sec-repository" class="hidden space-y-4">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-900">Repositório de Projetos Pedagógicos</h2>
-          <p class="text-xs text-slate-500">Gerencie e consulte práticas pedagógicas aplicadas por professores com anexo em PDF.</p>
+          <p class="text-xs text-slate-500">Gerencie e consulte práticas pedagógicas aplicadas por professores com visualização instantânea em PDF.</p>
         </div>
         <div class="flex gap-2 w-full sm:w-auto flex-wrap">
           <button type="button" onclick="deleteSelectedProjects()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-sm">
@@ -385,7 +407,7 @@
               <th class="p-4">Professor(es)</th>
               <th class="p-4">Disciplina / Área</th>
               <th class="p-4">Público / Turma</th>
-              <th class="p-4 text-center">Anexo PDF</th>
+              <th class="p-4 text-center">Documento PDF</th>
               <th class="p-4 text-center">Ações</th>
             </tr>
           </thead>
@@ -394,27 +416,62 @@
       </div>
     </section>
 
-    <!-- SEÇÃO RELATÓRIOS QUANTITATIVOS E QUALITATIVOS (PDF) -->
+    <!-- SEÇÃO RELATÓRIOS (Com Filtros Intuitivos e Visualizar PDF) -->
     <section id="sec-reports" class="hidden space-y-6">
       <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 class="text-base font-bold text-slate-900">Relatório Quantitativo e Qualitativo de Circulação</h2>
-          <p class="text-xs text-slate-500">Métricas analíticas detalhadas do acervo e engajamento dos alunos prontos para PDF.</p>
+          <p class="text-xs text-slate-500">Métricas analíticas detalhadas do acervo com ferramentas de filtragem interativa.</p>
         </div>
-        <button type="button" onclick="exportFullReportPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 cursor-pointer transition">
-          <i class="ph-bold ph-file-pdf text-base"></i> Baixar Relatório Completo em PDF
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="previewReportPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-purple-500/25 cursor-pointer transition">
+            <i class="ph-bold ph-eye text-base"></i> Visualizar Relatório em PDF
+          </button>
+          <button type="button" onclick="exportFullReportPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 cursor-pointer transition">
+            <i class="ph-bold ph-file-pdf text-base"></i> Baixar PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- PAINEL DE FILTROS INTUITIVOS PARA O RELATÓRIO -->
+      <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Status de Exemplar</label>
+          <select id="reportFilterStatus" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="ALL">Todos os Status</option>
+            <option value="DISPONÍVEL">Disponível</option>
+            <option value="EMPRESTADO">Emprestado</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Filtrar por Série / Turma (Alunos)</label>
+          <select id="reportFilterGrade" onchange="renderReports()" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="ALL">Todas as Séries / Turmas</option>
+            <option value="1º Ano">1º Ano</option>
+            <option value="2º Ano">2º Ano</option>
+            <option value="3º Ano">3º Ano</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Pesquisa Direta no Relatório</label>
+          <input type="text" id="reportSearchTerm" oninput="renderReports()" placeholder="Filtrar por nome ou título..." class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
       </div>
 
       <div id="reportContainer" class="space-y-6 bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
-        <div class="border-b pb-4">
-          <h3 class="text-lg font-bold text-slate-900">Relatório Institucional de Acervo e Circulação</h3>
-          <p class="text-xs text-slate-500 mt-0.5">EEFTI Dr. Leão Sampaio — Bibliotecário: Igor Filipe Leal Negreiros (CRB 3/1779)</p>
+        <div class="border-b pb-4 flex justify-between items-end">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Relatório Institucional de Acervo e Circulação</h3>
+            <p class="text-xs text-slate-500 mt-0.5">EEFTI Dr. Leão Sampaio — Biblioteca Escolar</p>
+          </div>
+          <div class="text-right text-[11px] text-slate-500 font-medium">
+            Criado por: <span class="font-bold text-slate-800">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
-            <span class="text-[11px] font-bold text-slate-400 uppercase">Total de Exemplares</span>
+            <span class="text-[11px] font-bold text-slate-400 uppercase">Total de Exemplares Filtrados</span>
             <p id="repTotalBooks" class="text-2xl font-bold text-slate-900 mt-1">0</p>
           </div>
           <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
@@ -430,7 +487,7 @@
         <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 space-y-2">
           <h4 class="font-bold text-blue-900 text-xs flex items-center gap-2"><i class="ph-bold ph-chart-line-up text-blue-600 text-base"></i> Análise Qualitativa da Circulação</h4>
           <p class="text-xs text-slate-700 leading-relaxed">
-            O fluxo de circulação de materiais demonstra uma adesão expressiva por parte dos discentes do ensino fundamental e médio. Observa-se maior índice de empréstimos em obras de literatura infantojuvenil e clássicos literários, evidenciando o impacto positivo das práticas de incentivo à leitura na comunidade escolar. O tempo médio de retenção dos livros encontra-se dentro do prazo estipulado de 7 dias, com baixa taxa de retenção em atraso.
+            O fluxo de circulação de materiais demonstra uma adesão expressiva por parte dos discentes do ensino fundamental e médio. Observa-se maior índice de empréstimos em obras de literatura infantojuvenil e clássicos literários, evidenciando o impacto positivo das práticas de incentivo à leitura na comunidade escolar sob a gestão do acervo.
           </p>
         </div>
 
@@ -517,24 +574,62 @@
 
   </main>
 
-  <!-- RODAPÉ -->
+  <!-- RODAPÉ INSTITUCIONAL -->
   <footer id="mainFooter" class="bg-slate-900 text-slate-400 py-3.5 text-center text-xs mt-auto border-t border-slate-800 hidden">
-    Bibliotecário: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (CRB 3/1779)</span>
+    Criado por: <span class="font-bold text-slate-200">Igor Filipe Leal Negreiros (Bibliotecário - CRB 3/1779)</span>
   </footer>
+
+  <!-- MODAL DE VISUALIZAÇÃO DE PDF (Substituindo download direto) -->
+  <div id="pdfViewerModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 id="pdfViewerTitle" class="font-bold text-slate-900 text-sm">Visualização de Documento PDF</h3>
+        <button type="button" onclick="closePdfViewerModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+
+      <div id="pdfViewerContainer" class="flex-grow bg-slate-100 border border-slate-200 rounded-2xl min-h-[450px] flex items-center justify-center overflow-hidden">
+        <iframe id="pdfViewerIframe" class="w-full h-[500px] rounded-xl border-0"></iframe>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closePdfViewerModal()" class="bg-slate-800 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold cursor-pointer">Fechar Visualizador</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL DE ETIQUETAS -->
   <div id="labelsModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-4xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="bg-white rounded-3xl max-w-5xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-slate-900 text-sm">Folha de Etiquetas de Lombada (Máximo 14 por página)</h3>
+        <h3 class="font-bold text-slate-900 text-sm">Folhas de Etiquetas de Lombada (Paginação Contínua)</h3>
         <button type="button" onclick="closeLabelsModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
       </div>
 
-      <div id="printableLabelsSheet" class="bg-white p-6 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+      <div id="printableLabelsSheet" class="space-y-6 bg-slate-100 p-4 rounded-2xl border">
+        <!-- Preenchido via JS com páginas A4 contendo 14 etiquetas cada -->
+      </div>
 
       <div class="flex justify-end gap-2 pt-2 no-print">
-        <button type="button" onclick="downloadLabelsPDF()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition"><i class="ph-bold ph-file-pdf text-sm"></i> Baixar PDF</button>
+        <button type="button" onclick="previewLabelsPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition"><i class="ph-bold ph-eye text-sm"></i> Visualizar PDF</button>
         <button type="button" onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer transition"><i class="ph-bold ph-printer text-sm"></i> Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIGURAÇÃO SUPABASE (Acesso Online) -->
+  <div id="cloudConfigModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-slate-900 text-sm">Configurar Acesso Online (Supabase)</h3>
+        <button type="button" onclick="closeCloudConfigModal()" class="text-slate-400 hover:text-slate-600 cursor-pointer"><i class="ph-bold ph-x text-xl"></i></button>
+      </div>
+      <p class="text-xs text-slate-500">Insira as credenciais do Supabase para sincronizar o acervo e permitir consultas em outros dispositivos remotamente.</p>
+      <div class="space-y-3">
+        <div><label class="text-xs font-semibold text-slate-600">Supabase URL</label><input type="text" id="supabaseUrlInput" placeholder="https://xyz.supabase.co" class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
+        <div><label class="text-xs font-semibold text-slate-600">Supabase Anon Key</label><input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOi..." class="w-full px-3 py-2.5 border rounded-2xl text-xs outline-none focus:ring-2 focus:ring-blue-500"></div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="saveCloudConfig()" class="bg-blue-600 text-white px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-sm cursor-pointer">Salvar e Conectar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -602,7 +697,7 @@
     </div>
   </div>
 
-  <!-- MODAL PROJETO PEDAGÓGICO (Com upload PDF) -->
+  <!-- MODAL PROJETO PEDAGÓGICO -->
   <div id="projectModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
       <div class="flex justify-between items-center border-b pb-3">
@@ -673,8 +768,8 @@
   </div>
 
   <script>
-    const SUPABASE_URL = ""; 
-    const SUPABASE_KEY = ""; 
+    let SUPABASE_URL = localStorage.getItem('lib_sup_url') || ""; 
+    let SUPABASE_KEY = localStorage.getItem('lib_sup_key') || ""; 
     let supabaseClient = null;
 
     if (SUPABASE_URL && SUPABASE_KEY) {
@@ -682,6 +777,26 @@
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         document.getElementById('syncBadge')?.classList.remove('hidden');
       } catch(e) {}
+    }
+
+    function openCloudConfigModal() {
+      document.getElementById('supabaseUrlInput').value = SUPABASE_URL;
+      document.getElementById('supabaseKeyInput').value = SUPABASE_KEY;
+      document.getElementById('cloudConfigModal').classList.remove('hidden');
+    }
+    function closeCloudConfigModal() { document.getElementById('cloudConfigModal').classList.add('hidden'); }
+    function saveCloudConfig() {
+      SUPABASE_URL = document.getElementById('supabaseUrlInput').value.trim();
+      SUPABASE_KEY = document.getElementById('supabaseKeyInput').value.trim();
+      localStorage.setItem('lib_sup_url', SUPABASE_URL);
+      localStorage.setItem('lib_sup_key', SUPABASE_KEY);
+      if (SUPABASE_URL && SUPABASE_KEY) {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        document.getElementById('syncBadge')?.classList.remove('hidden');
+        alert('Configuração de nuvem salva! O acervo agora pode ser consultado online.');
+        persistState();
+      }
+      closeCloudConfigModal();
     }
 
     function formatDateToBR(dateObj) {
@@ -694,7 +809,7 @@
       return `${day}-${month}-${year}`;
     }
 
-    const defaultStaff = [{ id: 1, name: 'Administrador Master', role: 'Admin', user: 'admin', pass: 'admin123' }];
+    const defaultStaff = [{ id: 1, name: 'Igor Filipe Leal Negreiros', role: 'Bibliotecário (CRB 3/1779)', user: 'admin', pass: 'admin123' }];
     const defaultStudents = [
       { id: 'LEAO-2026-0001', name: 'Abner Gabriel Lopes Ribeiro', grade: '1º Ano', class: 'A' },
       { id: 'LEAO-2026-0002', name: 'Ana Júlia Gomes de Almeida', grade: '1º Ano', class: 'A' }
@@ -981,11 +1096,11 @@
       container.innerHTML = `
         <div class="text-center space-y-3">
           <p class="font-bold text-slate-700 text-xs">${selectedBookIds.size} exemplar(es) selecionado(s) para impressão.</p>
-          <button type="button" onclick="openLabelsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold cursor-pointer shadow-lg shadow-purple-500/25 transition">Visualizar Folha de Etiquetas (Máx. 14 por página)</button>
+          <button type="button" onclick="openLabelsModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-xs font-semibold cursor-pointer shadow-lg shadow-purple-500/25 transition">Visualizar Folhas de Etiquetas (Máx. 14 por página)</button>
         </div>`;
     }
 
-    /* ETIQUETAS (Limite de 14 por folha A4) */
+    /* ETIQUETAS: DIVISÃO EM PÁGINAS DE 14 E SEGUIDAS NAS SEGUINTES */
     function openLabelsModal() {
       if (selectedBookIds.size === 0) {
         alert('Selecione pelo menos um exemplar.');
@@ -995,31 +1110,43 @@
       sheet.innerHTML = '';
       
       const list = books.filter(b => selectedBookIds.has(b.id));
-      list.forEach((b, idx) => {
-        const authorParts = (b.author || '').trim().split(' ');
-        const surname = authorParts.length > 0 ? authorParts[authorParts.length - 1].toUpperCase() : 'AUTOR';
+      const pageSize = 14;
+      const totalPages = Math.ceil(list.length / pageSize);
 
-        sheet.innerHTML += `
-          <div class="label-box">
-            <div class="flex flex-col justify-between h-full max-w-[190px]">
-              <div>
-                <p class="font-bold text-xs text-slate-900 leading-tight uppercase font-sans">${surname}</p>
-                <p class="text-[11px] text-slate-800 italic leading-tight font-sans truncate">${b.title}</p>
+      for (let p = 0; p < totalPages; p++) {
+        const pageItems = list.slice(p * pageSize, (p + 1) * pageSize);
+        let pageHtml = `<div class="label-page shadow-md border border-slate-200">`;
+
+        pageItems.forEach((b, idxGlobal) => {
+          const realIdx = (p * pageSize) + idxGlobal;
+          const authorParts = (b.author || '').trim().split(' ');
+          const surname = authorParts.length > 0 ? authorParts[authorParts.length - 1].toUpperCase() : 'AUTOR';
+
+          pageHtml += `
+            <div class="label-box">
+              <div class="flex flex-col justify-between h-full max-w-[190px]">
+                <div>
+                  <p class="font-bold text-xs text-slate-900 leading-tight uppercase font-sans">${surname}</p>
+                  <p class="text-[11px] text-slate-800 italic leading-tight font-sans truncate">${b.title}</p>
+                </div>
+                <div class="mt-1">
+                  <svg id="barcode_lbl_${realIdx}"></svg>
+                  <p class="text-[10px] font-mono text-center text-slate-900 tracking-wider -mt-1">${b.id}</p>
+                </div>
               </div>
-              <div class="mt-1">
-                <svg id="barcode_lbl_${idx}"></svg>
-                <p class="text-[10px] font-mono text-center text-slate-900 tracking-wider -mt-1">${b.id}</p>
+
+              <div class="text-right font-mono space-y-0.5 text-slate-900 pl-2">
+                <p class="font-bold text-xs leading-tight">${b.cdd || '000.0'}</p>
+                <p class="font-normal text-xs leading-tight">${b.cutter || 'A100a'}</p>
+                <p class="font-normal text-xs leading-tight">ex.${b.exemplarNum || 1}</p>
               </div>
             </div>
+          `;
+        });
 
-            <div class="text-right font-mono space-y-0.5 text-slate-900 pl-3">
-              <p class="font-bold text-xs leading-tight">${b.cdd || '000.0'}</p>
-              <p class="font-normal text-xs leading-tight">${b.cutter || 'A100a'}</p>
-              <p class="font-normal text-xs leading-tight">ex.${b.exemplarNum || 1}</p>
-            </div>
-          </div>
-        `;
-      });
+        pageHtml += `</div>`;
+        sheet.innerHTML += pageHtml;
+      }
 
       document.getElementById('labelsModal').classList.remove('hidden');
 
@@ -1028,8 +1155,8 @@
           try {
             JsBarcode(`#barcode_lbl_${idx}`, b.id, { 
               format: "CODE128", 
-              width: 1.2, 
-              height: 35, 
+              width: 1.1, 
+              height: 32, 
               displayValue: false 
             });
           } catch(e) {}
@@ -1041,12 +1168,14 @@
       document.getElementById('labelsModal').classList.add('hidden');
     }
 
-    function downloadLabelsPDF() {
+    function previewLabelsPDF() {
       const element = document.getElementById('printableLabelsSheet');
-      html2pdf().from(element).save(`etiquetas_lombada.pdf`);
+      html2pdf().from(element).outputPdf('datauristring').then(pdfDataUri => {
+        openPdfViewer('Etiquetas de Lombada (A4)', pdfDataUri);
+      });
     }
 
-    /* REPOSITÓRIO COM MECANISMO DO ACERVO + PDF */
+    /* REPOSITÓRIO: VISUALIZAR PDF NO LUGAR DE BAIXAR */
     function renderRepository() {
       document.getElementById('projectsTableBody').innerHTML = projects.map((p, idx) => `
         <tr class="hover:bg-slate-50 transition">
@@ -1057,7 +1186,7 @@
           <td class="p-4"><span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-200">${p.area}</span></td>
           <td class="p-4 text-slate-500">${p.target}</td>
           <td class="p-4 text-center">
-            ${p.pdfData ? `<a href="${p.pdfData}" download="${p.pdfName || 'projeto.pdf'}" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-2.5 py-1 rounded-xl text-[10px] font-bold border border-purple-200 transition"><i class="ph-bold ph-file-pdf"></i> Baixar PDF</a>` : `<span class="text-slate-400 text-[10px]">Sem anexo</span>`}
+            ${p.pdfData ? `<button type="button" onclick="openPdfViewer('${p.title}', '${p.pdfData}')" class="inline-flex items-center gap-1 bg-purple-50 text-purple-700 hover:bg-purple-100 px-2.5 py-1 rounded-xl text-[10px] font-bold border border-purple-200 transition cursor-pointer"><i class="ph-bold ph-eye"></i> Visualizar PDF</button>` : `<span class="text-slate-400 text-[10px]">Sem anexo</span>`}
           </td>
           <td class="p-4 text-center space-x-2">
             <button type="button" onclick="openProjectModal(${idx})" class="text-slate-400 hover:text-blue-600 text-base cursor-pointer transition" title="Editar"><i class="ph-bold ph-pencil-simple"></i></button>
@@ -1181,18 +1310,52 @@
       }
     }
 
+    /* VISUALIZADOR DE PDF EM MODAL */
+    function openPdfViewer(title, dataUri) {
+      document.getElementById('pdfViewerTitle').innerText = `Visualizando: ${title}`;
+      document.getElementById('pdfViewerIframe').src = dataUri;
+      document.getElementById('pdfViewerModal').classList.remove('hidden');
+    }
+    function closePdfViewerModal() {
+      document.getElementById('pdfViewerModal').classList.add('hidden');
+      document.getElementById('pdfViewerIframe').src = '';
+    }
+
+    /* RELATÓRIOS COM FILTROS INTUITIVOS E VISUALIZAÇÃO PDF */
     function renderReports() {
-      document.getElementById('repTotalBooks').innerText = books.length;
+      const statusFilter = document.getElementById('reportFilterStatus').value;
+      const gradeFilter = document.getElementById('reportFilterGrade').value;
+      const searchTerm = (document.getElementById('reportSearchTerm').value || '').trim().toLowerCase();
+
+      let filteredBooks = books;
+      if (statusFilter !== 'ALL') {
+        filteredBooks = filteredBooks.filter(b => b.status === statusFilter);
+      }
+      if (searchTerm) {
+        filteredBooks = filteredBooks.filter(b => (b.title || '').toLowerCase().includes(searchTerm) || (b.author || '').toLowerCase().includes(searchTerm));
+      }
+
+      document.getElementById('repTotalBooks').innerText = filteredBooks.length;
       document.getElementById('repTotalLoans').innerText = loans.length;
       document.getElementById('repTotalStudents').innerText = students.length;
 
       const readerCounts = {};
       loans.forEach(l => { readerCounts[l.student] = (readerCounts[l.student] || 0) + 1; });
-      const sortedReaders = Object.entries(readerCounts).sort((a,b) => b[1] - a[1]);
+      let sortedReaders = Object.entries(readerCounts).sort((a,b) => b[1] - a[1]);
+
+      if (gradeFilter !== 'ALL') {
+        sortedReaders = sortedReaders.filter(([student]) => {
+          const stObj = students.find(s => s.name === student);
+          return stObj && stObj.grade === gradeFilter;
+        });
+      }
+      if (searchTerm) {
+        sortedReaders = sortedReaders.filter(([student]) => student.toLowerCase().includes(searchTerm));
+      }
       
       const readersTBody = document.getElementById('topReadersTable');
       if (sortedReaders.length === 0) {
-        readersTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum empréstimo registrado.</td></tr>`;
+        readersTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum registro encontrado com estes filtros.</td></tr>`;
       } else {
         readersTBody.innerHTML = sortedReaders.map(([student, count]) => {
           const stObj = students.find(s => s.name === student);
@@ -1202,9 +1365,9 @@
       }
 
       const recentInsTBody = document.getElementById('recentInsertionsTable');
-      const recentBooks = [...books].reverse().slice(0, 10);
+      let recentBooks = [...filteredBooks].reverse().slice(0, 10);
       if (recentBooks.length === 0) {
-        recentInsTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum material cadastrado.</td></tr>`;
+        recentInsTBody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Nenhum material encontrado.</td></tr>`;
       } else {
         recentInsTBody.innerHTML = recentBooks.map(b => `
           <tr class="hover:bg-slate-50">
@@ -1214,6 +1377,13 @@
           </tr>
         `).join('');
       }
+    }
+
+    function previewReportPDF() {
+      const element = document.getElementById('reportContainer');
+      html2pdf().from(element).outputPdf('datauristring').then(pdfDataUri => {
+        openPdfViewer('Relatório de Circulação', pdfDataUri);
+      });
     }
 
     function exportFullReportPDF() {
@@ -1668,3 +1838,4 @@
   </script>
 </body>
 </html>
+```
